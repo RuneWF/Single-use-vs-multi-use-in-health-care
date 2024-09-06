@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def plot_colors(list_length, color):
     cmap = plt.get_cmap(color)
@@ -11,6 +12,10 @@ def swap_rows(df, row1, row2):
     df.iloc[row1], df.iloc[row2] =  df.iloc[row2].copy(), df.iloc[row1].copy()
     return df
 
+def results_folder():
+    save_dir = r'Single-use-vs-multi-use-in-health-care\Results'
+    # Create the directory if it doesn't exist
+    os.makedirs(save_dir, exist_ok=True)
 
 
 
