@@ -17,6 +17,7 @@ def results_folder(name):
     # Create the directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
     print(f'Folder name {name} created')
+    return save_dir
 
 
 
