@@ -1,3 +1,6 @@
+import bw2data as bd
+import bw2io as bi
+
 def LCA_initialization(name, db, flows):
     bd.projects.set_current(name)
 
