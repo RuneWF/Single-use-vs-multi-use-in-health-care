@@ -1,5 +1,8 @@
 import bw2data as bd
 import bw2io as bi
+import bw2calc as bc
+import bw2analyzer as bwa
+import brightway2 as bw 
 
 def LCA_initialization(name, db, flows):
     bd.projects.set_current(name)
