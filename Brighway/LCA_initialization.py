@@ -4,7 +4,7 @@ import bw2calc as bc
 import bw2analyzer as bwa
 import brightway2 as bw 
 
-def LCA_initialization(name, db, flows):
+def LCA_initialization_og(name, db, flows):
     bd.projects.set_current(name)
 
     bi.bw2setup()
