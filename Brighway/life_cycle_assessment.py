@@ -226,5 +226,252 @@ def life_cycle_impact_assessment(flows, functional_unit, impact_categories, proc
             
             if row_counter == len(flows):  # Reset when all flows have been processed
                 row_counter = 0
+        
+    return df
+
+def save_LCA_results(df, file_name, sheet_name, impact_category):
+    # Convert each cell to a JSON string for all columns
+    df_save = df.map(lambda x: json.dumps(x) if isinstance(x, list) else x)
+
+    # Save to Excel
+    with pd.ExcelWriter(file_name) as writer:
+        df_save.to_excel(writer, sheet_name=sheet_name, index=False, header=True)
+
+    print('DataFrame with nested lists written to Excel successfully.')
+
+    with open("impact_categories", "w") as fp:
+        json.dump(impact_category, fp)
+
+def import_LCA_results(file_name, flow, impact_category):
+    # Reading from Excel
+    if type(impact_category) == tuple:
+        impact_category = [impact_category]
+
+    df = pd.read_excel(file_name)
+
+    # Convert JSON strings back to lists for all columns
+    df = df.map(lambda x: json.loads(x) if isinstance(x, str) and x.startswith('[') else x)
+    df = df.set_axis(flow)
+    df.columns = impact_category
 
     return df
+
+def nitrous_oxide_filter(FU):
+    filtered_dict = {}
+    for scenario in FU:
+        for sc_key, sc_item in scenario.items():
+
+            for sc_proc_key, sc_proc_item in sc_item.items():
+                if 'Consequential' in sc_proc_key[0]:
+                    filtered_dict[sc_proc_key] = sc_proc_item 
+                    print(sc_item)
+    return filtered_dict
+
+def sub_process(sub_product_details):
+    sub_proccess = {}
+    amount = {}
+    for key, details in sub_product_details.items():
+        print(f"Process: {key}")
+
+        sub_proccess[key] = []
+
+        for detail in details:
+            
+            sub_proccess[key].append([detail[0], detail[1], detail[3]])
+            amount[detail[1]] = []
+            amount[detail[1]].append(detail[3])
+    return sub_proccess, amount
+
+def sub_process_initilization(sub_proccess, FU, name, idx_name):
+
+    filtered_dict = nitrous_oxide_filter(FU)
+    # Initializing empty dictionaries to store the results
+    FU_sub = {key: [] for key in sub_proccess}
+    FU_sub_proc = {key: [] for key in sub_proccess}
+
+
+    for proc, sub_proc in sub_proccess.items():
+        # print(f'Process: {proc}')
+        temp = {}
+        fu_temp = []
+        for proc_idx in range(len(sub_proc)):
+            #print(sub_proc[proc_idx])
+            flow = [sub_proc[proc_idx][1]]
+            
+            db_proc = sub_proc[proc_idx][0][0]
+            #print(f'Flow : {flow}, Database: {db_proc}, Subprocess : {sub_proc}')
+            if db_proc == 'Consequential' and sub_proc[proc_idx][0] in filtered_dict:
+                #print(flow)
+                fu = [{flow[0] : filtered_dict}]
+                p = flow
+
+            else:
+                fu, p, ic, pxa, kokos = LCA_initialization(name, db_proc,flow)
+
+            
+            temp[flow[0]] = []
+            temp[flow[0]].append(p)
+            for fuck in fu:
+                fu_temp.append(fuck)
+
+        FU_sub[proc].append(fu_temp)
+        FU_sub_proc[proc].append(temp)
+
+    idx = []
+    sc_counter = 1
+    for k, i in FU_sub_proc.items():
+        for kk, ii in i[0].items():
+            idx.append(kk + f' - sc {sc_counter}')
+        sc_counter += 1
+
+    with open(idx_name, "w") as fp:
+        json.dump(idx, fp)
+
+    return FU_sub, FU_sub_proc, idx
+
+def FU_contibution_initilization(FU_sub, FU_sub_proc):
+    flow_count = 0
+    flow_sub = []
+    functional_unit_sub = []
+    for key, item in FU_sub_proc.items():
+        # print(key)
+        df_temp = {}
+        for pommesfrit in item:
+            for pom_process, pom_subprocess in pommesfrit.items():
+                for pompom in pom_subprocess:
+
+                    fu_proc_temp = pom_process
+                    fu_sub_proc_temp = pompom
+                    fu_temp = FU_sub[key][0]
+
+                    flow_sub.append(fu_proc_temp)
+            functional_unit_sub.append(fu_temp)
+
+    for func_unit in functional_unit_sub:
+        flow_count += len(func_unit) 
+
+    return flow_count, flow_sub, functional_unit_sub     
+
+def N2O_use_replace(FU, FU_sub):
+    functional_unit_sub_new = copy.deepcopy(FU_sub)
+
+    for fcu in range(len(FU_sub)):
+        for fu_ind in range(len(FU_sub[fcu])):
+            for fu_ind_key, fu_ind_item in FU_sub[fcu][fu_ind].items():
+                funky_key = [i for i in fu_ind_item.keys()][0]
+                for fu_sc in range(len(FU)):
+                    for uuuu, fu_sc_val in FU[fu_sc].items():
+                        funky_key_sc = [i for i in fu_sc_val.keys()][0]
+                        if fu_ind_key in f'{funky_key_sc}' and 'biosphere3' in funky_key[0]:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key : fu_sc_val})
+    return functional_unit_sub_new
+
+def LCIA_contribution(impact_category, flow_count, sub_proc, FU_sub, amount, idx):
+    if type(impact_category) == tuple:
+        impact_category = [impact_category]
+
+    df_cont = pd.DataFrame(0, index=idx, columns=impact_category, dtype=object)  # dtype=object to handle lists
+
+    calc = len(impact_category)*flow_count
+    dct = {}
+    row_counter = 0
+    calc_count = 1
+    
+    # Iterate over impact categories (columns)
+    for column, cat in enumerate(impact_category):
+        # Iterate over processes and their corresponding flows in FU_sub_proc
+        for k, i in sub_proc.items():
+            # For each flow in the current process
+            
+            for f in i[0].keys():
+                accounted_flows = []
+                
+                print(f"Processing flow: {f} in impact category: {cat[1]}")
+
+                # Initialize the result list for the current flow
+                dct[f] = []
+                df_lst = []
+
+                # Perform LCA for each functional unit
+                for func_unit in range(len(FU_sub)):
+                    
+                    for FU_dict in FU_sub[func_unit]:
+                        for  dk, di in FU_dict.items():
+                            # print(dk, di)
+                            div = [proc_val for proc_val in di.values()][0]
+                            if dk in f and di.keys() not in accounted_flows:
+                                
+                                accounted_flows.append(di.keys())
+                                FU_dict_copy = copy.deepcopy(FU_dict)
+
+                                # Update the flow amounts
+                                for key, item in FU_dict.items():
+                                    for FU_key, FU_val in item.items():
+                                        FU_dict_copy[key][FU_key] = FU_dict[key][FU_key] * amount[f][0]
+                    
+                                # Perform LCA
+                                lca = bw.LCA(FU_dict_copy[key], cat)
+                                lca.lci()
+                                lca.lcia()
+
+                                # Append the result (using the temp variable for functional unit sub-process)
+                                df_lst.append([f'{FU_key}', lca.score])
+                                print(f"{FU_key} Calculation {calc_count} of {calc}, Score: {lca.score} {cat[1]}")
+                                calc_count += 1
+
+                
+                
+
+                # # Assign the result list to the DataFrame for the current flow and column (impact category)
+                df_cont.iloc[row_counter, column] = df_lst
+                # Update the row counter after processing all flows in the current impact category
+                row_counter += 1
+                print(f'row : {row_counter - 1}, col : {column} is assigned list : {df_lst}')
+
+
+
+
+                # Reset the row counter if it reaches the number of rows (flows)
+                if row_counter == len(idx):
+                    row_counter = 0
+
+    return df_cont
+
+def dataframe_element_sum(df_test):
+    df_tot = df_test.copy()
+
+    for col in range(df_test.shape[1]):  # Iterate over columns
+        for row in range(df_test.shape[0]):  # Iterate over rows
+            tot = 0
+            for i in range(len(df_test.iloc[row,col])):
+                #print(df_updated.iloc[row,col][i][1])
+                tot += df_test.iloc[row,col][i][1]
+            df_tot.iloc[row,col] = tot
+            # print('New row')
+    return df_tot
+
+def dataframe_element_scaling(df_tot):
+    df_cols = df_tot.columns
+    df_cols = df_cols.to_list()
+
+    df_norm = pd.DataFrame().reindex_like(df_tot) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
+    for i in df_cols:
+        scaling_factor = max(abs(df_tot[i]))
+        # print(df_tot[i])
+        for j in range(len(df_tot[df_cols[0]])):
+            df_norm[i][j] =df_tot[i][j]/scaling_factor
+
+    # Selecting the columns from 1th column onwards
+    columns_to_plot = df_norm.columns
+
+    return df_norm, columns_to_plot
+
+def dataframe_column_structure(df1, impact_category):
+    plot_x_axis = [0] * len(impact_category)
+    for i in range(len(plot_x_axis)):
+        if "photochemical oxidant formation" in impact_category[i][1]:
+            plot_x_axis[i] = "Photochemical Oxidant Formation"
+        else:
+            plot_x_axis[i] = impact_category[i][1].title()
+
+    return plot_x_axis
