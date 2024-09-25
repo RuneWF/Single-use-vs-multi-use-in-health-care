@@ -23,6 +23,10 @@ import bw2analyzer as bwa
 import brightway2 as bw 
 from bw2calc import LeastSquaresLCA
 
+from standards import *
+
+save_dir = results_folder('Results')
+
 def MC_set_up(flows, database):
     eidb = bd.Database(database)
 
@@ -207,6 +211,9 @@ def MC_graphs(flow_legend, data, iterations):
         plt.xlabel(flow_legend[scenario], size=12)
         plt.ylabel('kg CO$_2$e', size=12)
 
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f'MC_results_{flow_legend[scenario]}.jpg'), bbox_inches='tight')
         # Show the plot
         plt.show()
 
