@@ -136,7 +136,7 @@ def MC_results(iterations, FU_new, impact_category, uncertainties):
                     # print(index)
                 elif 'maximum' in index.lower():
                     row[col] = np.max(lcia_results_array)
-            return df_MC, raw_data
+        return df_MC, raw_data
         
     else:
         Monte_Carlo_dct = {}
