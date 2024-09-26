@@ -230,6 +230,8 @@ def life_cycle_impact_assessment(flows, functional_unit, impact_categories, proc
     return df
 
 def save_LCA_results(df, file_name, sheet_name, impact_category):
+    if type(impact_category) == tuple:
+        impact_category = [impact_category]
     # Convert each cell to a JSON string for all columns
     df_save = df.map(lambda x: json.dumps(x) if isinstance(x, list) else x)
 
@@ -267,7 +269,7 @@ def nitrous_oxide_filter(FU):
                     print(sc_item)
     return filtered_dict
 
-def sub_process(sub_product_details):
+def obtaining_sub_process(sub_product_details):
     sub_proccess = {}
     amount = {}
     for key, details in sub_product_details.items():
@@ -453,18 +455,19 @@ def dataframe_element_scaling(df_test):
     df_cols = df_cols.to_list()
 
     df_norm = pd.DataFrame().reindex_like(df_tot) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
+    
     for i in df_cols:
         scaling_factor = max(abs(df_tot[i]))
         # print(df_tot[i])
-        for j in range(len(df_tot[df_cols[0]])):
-            df_norm[i][j] =df_tot[i][j]/scaling_factor
+        for idx, row in df_tot.iterrows():
+            df_norm.loc[idx] = row[i] / scaling_factor
 
-    # Selecting the columns from 1th column onwards
-    columns_to_plot = df_norm.columns
+    return df_norm
 
-    return df_norm, columns_to_plot
+def dataframe_column_structure(impact_category):
+    if type(impact_category) == tuple:
+        impact_category = [impact_category]
 
-def dataframe_column_structure(df1, impact_category):
     plot_x_axis = [0] * len(impact_category)
     for i in range(len(plot_x_axis)):
         if "photochemical oxidant formation" in impact_category[i][1]:
