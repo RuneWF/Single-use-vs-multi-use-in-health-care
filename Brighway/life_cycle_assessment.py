@@ -437,7 +437,7 @@ def LCIA_contribution(impact_category, flow_count, sub_proc, FU_sub, amount, idx
 
     return df_cont
 
-def dataframe_element_sum(df_test):
+def dataframe_element_scaling(df_test):
     df_tot = df_test.copy()
 
     for col in range(df_test.shape[1]):  # Iterate over columns
@@ -448,9 +448,7 @@ def dataframe_element_sum(df_test):
                 tot += df_test.iloc[row,col][i][1]
             df_tot.iloc[row,col] = tot
             # print('New row')
-    return df_tot
 
-def dataframe_element_scaling(df_tot):
     df_cols = df_tot.columns
     df_cols = df_cols.to_list()
 
