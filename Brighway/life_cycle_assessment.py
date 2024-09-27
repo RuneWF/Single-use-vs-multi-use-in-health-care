@@ -258,22 +258,29 @@ def import_LCA_results(file_name, flow, impact_category):
 
     return df
 
-def nitrous_oxide_filter(FU):
+def process_filter(FU):
     filtered_dict = {}
-    for scenario in FU:
+    for i, scenario in enumerate(FU):
         for sc_key, sc_item in scenario.items():
 
             for sc_proc_key, sc_proc_item in sc_item.items():
+                
+                # N2O
                 if 'Consequential' in sc_proc_key[0]:
                     filtered_dict[sc_proc_key] = sc_proc_item 
-                    print(sc_item)
+                    # print(sc_item)
+                # Avoided energy and heat
+                elif 'no Energy Recovery' in f'{sc_proc_key}' or 'heating grid' in f'{sc_proc_key}':
+                    print(f'Key : {sc_proc_key}, Item : {sc_proc_item}, {sc_key}')
+                    filtered_dict[sc_proc_key] = sc_proc_item 
+                    # print(sc_item)
     return filtered_dict
 
 def obtaining_sub_process(sub_product_details):
     sub_proccess = {}
     amount = {}
     for key, details in sub_product_details.items():
-        print(f"Process: {key}")
+        # print(f"Process: {key}")
 
         sub_proccess[key] = []
 
@@ -286,7 +293,7 @@ def obtaining_sub_process(sub_product_details):
 
 def sub_process_initilization(sub_proccess, FU, name, idx_name):
 
-    filtered_dict = nitrous_oxide_filter(FU)
+    filtered_dict = process_filter(FU)
     # Initializing empty dictionaries to store the results
     FU_sub = {key: [] for key in sub_proccess}
     FU_sub_proc = {key: [] for key in sub_proccess}
@@ -301,12 +308,14 @@ def sub_process_initilization(sub_proccess, FU, name, idx_name):
             flow = [sub_proc[proc_idx][1]]
             
             db_proc = sub_proc[proc_idx][0][0]
-            #print(f'Flow : {flow}, Database: {db_proc}, Subprocess : {sub_proc}')
+            print(f'Flow : {flow}, Database: {db_proc}, Subprocess : {sub_proc}')
             if db_proc == 'Consequential' and sub_proc[proc_idx][0] in filtered_dict:
                 #print(flow)
                 fu = [{flow[0] : filtered_dict}]
                 p = flow
-
+            # elif 'no Energy Recovery' in f'{flow}' or 'heating grid' in f'{flow}':
+            #     fu = [{flow[0] : filtered_dict}]
+            #     p = flow
             else:
                 fu, p, ic, pxa, kokos = LCA_initialization(name, db_proc,flow)
 
@@ -354,8 +363,9 @@ def FU_contibution_initilization(FU_sub, FU_sub_proc):
 
     return flow_count, flow_sub, functional_unit_sub     
 
-def N2O_use_replace(FU, FU_sub):
+def process_update(FU, FU_sub):
     functional_unit_sub_new = copy.deepcopy(FU_sub)
+    updated_keys = set()
 
     for fcu in range(len(FU_sub)):
         for fu_ind in range(len(FU_sub[fcu])):
@@ -364,9 +374,49 @@ def N2O_use_replace(FU, FU_sub):
                 for fu_sc in range(len(FU)):
                     for uuuu, fu_sc_val in FU[fu_sc].items():
                         funky_key_sc = [i for i in fu_sc_val.keys()][0]
+                    # if fu_ind_key not in updated_keys:
+                    #     print(fu_ind_key)
                         if fu_ind_key in f'{funky_key_sc}' and 'biosphere3' in funky_key[0]:
-                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key : fu_sc_val})
-    return functional_unit_sub_new
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'PE incineration no Energy Recovery' in f'{funky_key_sc}' and 'PE incineration no Energy Recovery' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'PP incineration no Energy Recovery' in f'{funky_key_sc}' and 'PP incineration no Energy Recovery' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'heating grid' in f'{funky_key_sc}' and 'heating grid' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'transport Alu' in f'{funky_key_sc}' and 'transport Alu' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'transport Pla' in f'{funky_key_sc}' and 'transport Pla' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'autoclave ' in f'{funky_key_sc}' and 'autoclave ' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)                            
+                        elif 'disinfection' in f'{funky_key_sc}' and 'disinfection' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+                        elif 'Handwash' in f'{funky_key_sc}' and 'Handwash' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
+
+    fu_sub_updated = []
+    for scenario in range(len(functional_unit_sub_new)):
+        temp_lst = []  # Move temp_lst initialization here
+        for proc in range(len(functional_unit_sub_new[scenario])):
+            temp = functional_unit_sub_new[scenario][proc]
+            
+            if temp not in temp_lst:
+                temp_lst.append(temp)
+        
+        fu_sub_updated.append(temp_lst)  # Append temp_lst after the inner loop
+
+    return fu_sub_updated
+
 
 def LCIA_contribution(impact_category, flow_count, sub_proc, FU_sub, amount, idx):
     if type(impact_category) == tuple:
@@ -440,7 +490,7 @@ def LCIA_contribution(impact_category, flow_count, sub_proc, FU_sub, amount, idx
     return df_cont
 
 def dataframe_element_scaling(df_test):
-    df_tot = df_test.copy()
+    df_tot = copy.deepcopy(df_test)
 
     for col in range(df_test.shape[1]):  # Iterate over columns
         for row in range(df_test.shape[0]):  # Iterate over rows
@@ -454,15 +504,18 @@ def dataframe_element_scaling(df_test):
     df_cols = df_tot.columns
     df_cols = df_cols.to_list()
 
-    df_norm = pd.DataFrame().reindex_like(df_tot) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
-    
-    for i in df_cols:
-        scaling_factor = max(abs(df_tot[i]))
-        # print(df_tot[i])
-        for idx, row in df_tot.iterrows():
-            df_norm.loc[idx] = row[i] / scaling_factor
+    #df_norm = pd.DataFrame().reindex_like(df_tot) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
+    df_norm = copy.deepcopy(df_tot)
 
-    return df_norm
+
+    for i in df_cols:
+        scaling_factor = max(abs(df_norm[i]))
+        # print(df_tot[i])
+        for idx, row in df_norm.iterrows():
+            row[i] /= scaling_factor
+        # df_norm = copy.deepcopy(df_tot)
+
+    return df_tot, df_norm, df_cols
 
 def dataframe_column_structure(impact_category):
     if type(impact_category) == tuple:
@@ -476,3 +529,42 @@ def dataframe_column_structure(impact_category):
             plot_x_axis[i] = impact_category[i][1].title()
 
     return plot_x_axis
+
+def LCA_normalization(directory, df):
+    file = f'{directory}Single-use-vs-multi-use-in-health-care\\Norm + Weigh.xlsx'
+    data_NW = pd.read_excel(file)
+    columns = df.columns
+
+    norm_lst = data_NW['Normalization']
+    weigh_lst = data_NW['Weighting'].to_list
+
+    norm_lst = [0]*(len(data_NW['Normalization']))
+    weigh_lst = [0]*(len(data_NW['Weighting']))
+
+    for i in range(len(data_NW['Normalization'])):
+        norm_lst[i] = data_NW['Normalization'][i]
+        weigh_lst[i] = data_NW['Weighting'][i]
+
+    norm_df = pd.DataFrame().reindex_like(df) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
+    weigh_df = pd.DataFrame().reindex_like(df)
+
+    counter = 0
+    for i in columns:
+        for j in range(len(df[columns[0]])):
+            norm_df[i][j] =df[i][j] * norm_lst[counter]
+            weigh_df[i][j] =norm_df[i][j] * weigh_lst[counter]
+        counter +=1
+
+    lst = [0] * len(weigh_df[columns[0]])
+    for j in range(len(weigh_df[columns[0]])):
+        for i in columns:
+            lst[j] += weigh_df[i][j]
+
+    lst_norm_weighted = [0] * len(lst)
+    lst_max = max(lst)
+
+
+    for n in range(len(lst)):
+        lst_norm_weighted[n] = lst[n]/lst_max
+
+    return lst_norm_weighted
