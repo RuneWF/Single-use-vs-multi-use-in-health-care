@@ -271,7 +271,7 @@ def process_filter(FU):
                     # print(sc_item)
                 # Avoided energy and heat
                 elif 'no Energy Recovery' in f'{sc_proc_key}' or 'heating grid' in f'{sc_proc_key}':
-                    print(f'Key : {sc_proc_key}, Item : {sc_proc_item}, {sc_key}')
+                    # print(f'Key : {sc_proc_key}, Item : {sc_proc_item}, {sc_key}')
                     filtered_dict[sc_proc_key] = sc_proc_item 
                     # print(sc_item)
     return filtered_dict
@@ -308,7 +308,7 @@ def sub_process_initilization(sub_proccess, FU, name, idx_name):
             flow = [sub_proc[proc_idx][1]]
             
             db_proc = sub_proc[proc_idx][0][0]
-            print(f'Flow : {flow}, Database: {db_proc}, Subprocess : {sub_proc}')
+            # print(f'Flow : {flow}, Database: {db_proc}, Subprocess : {sub_proc}')
             if db_proc == 'Consequential' and sub_proc[proc_idx][0] in filtered_dict:
                 #print(flow)
                 fu = [{flow[0] : filtered_dict}]
@@ -509,7 +509,7 @@ def dataframe_element_scaling(df_test):
 
 
     for i in df_cols:
-        scaling_factor = max(abs(df_norm[i]))
+        scaling_factor = max(df_norm[i])
         # print(df_tot[i])
         for idx, row in df_norm.iterrows():
             row[i] /= scaling_factor
@@ -530,41 +530,40 @@ def dataframe_column_structure(impact_category):
 
     return plot_x_axis
 
-def LCA_normalization(directory, df):
+def LCIA_normalization(directory, df):
     file = f'{directory}Single-use-vs-multi-use-in-health-care\\Norm + Weigh.xlsx'
     data_NW = pd.read_excel(file)
     columns = df.columns
 
-    norm_lst = data_NW['Normalization']
-    weigh_lst = data_NW['Weighting'].to_list
+    norm_lst = data_NW['Normalization'].tolist()
+    weigh_lst = data_NW['Weighting'].tolist()
 
-    norm_lst = [0]*(len(data_NW['Normalization']))
-    weigh_lst = [0]*(len(data_NW['Weighting']))
-
-    for i in range(len(data_NW['Normalization'])):
-        norm_lst[i] = data_NW['Normalization'][i]
-        weigh_lst[i] = data_NW['Weighting'][i]
-
-    norm_df = pd.DataFrame().reindex_like(df) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
     weigh_df = pd.DataFrame().reindex_like(df)
 
     counter = 0
+    weigh_df_copy = copy.deepcopy(weigh_df)
     for i in columns:
-        for j in range(len(df[columns[0]])):
-            norm_df[i][j] =df[i][j] * norm_lst[counter]
-            weigh_df[i][j] =norm_df[i][j] * weigh_lst[counter]
-        counter +=1
-
-    lst = [0] * len(weigh_df[columns[0]])
-    for j in range(len(weigh_df[columns[0]])):
+        for j, row in df.iterrows():
+            nw_val = row[i] * norm_lst[counter] * weigh_lst[counter]
+            weigh_df.at[j, i] = nw_val #https://saturncloud.io/blog/how-to-update-a-cell-value-in-pandas-dataframe/
+            # print(j, nw_val, row[i] * norm_lst[counter] * weigh_lst[counter])
+        counter += 1
+        
+    # print(weigh_df)
+    lst = []
+    for idx_val, row in weigh_df.iterrows():
+        temp = 0
         for i in columns:
-            lst[j] += weigh_df[i][j]
+        
+        
+            temp += row[i]
+        lst.append(temp)
 
     lst_norm_weighted = [0] * len(lst)
     lst_max = max(lst)
 
-
     for n in range(len(lst)):
-        lst_norm_weighted[n] = lst[n]/lst_max
+        if lst_max != 0:
+            lst_norm_weighted[n] = lst[n] / lst_max
 
     return lst_norm_weighted
