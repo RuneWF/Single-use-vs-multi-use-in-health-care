@@ -27,15 +27,37 @@ from bw2calc import LeastSquaresLCA
 
 from standards import *
 
-def LCA_initialization(name: str, db: str, flows: list) -> tuple:
-    db_consq = 'Consequential'
+def lcia_method(method):
+    if 'recipe' in method.lower():
+        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H)' in str(m) and 'no LT' not in str(m)]
+        endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H)' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
+
+        for meth in endpoint:
+            all_methods.append(meth)
+
+        print('Recipe is selected')
+
+    elif 'ef' in method.lower():
+        all_methods = [m for m in bw.methods if 'EF v3.1 EN15804' in str(m) and "climate change:" not in str(m)]
+        print('EF is selected')
+    else:
+        print('Select either EF or ReCiPe as the LCIA methos')
+        all_methods = []
+
+    return all_methods
+
+def LCA_initialization(name: str, db: str, flows: list, method: str) -> tuple:
+    if 'Consequential' in db:
+        db_eco = 'Consequential'
+    else:
+        db_eco = 'APOS'
     db_cyl = 'Cylinder'
     db_pellet = 'Pellet'
     bd.projects.set_current(name)
 
     bi.bw2setup()
     eidb = bd.Database(db)
-    eidb_consq = bd.Database(db_consq)
+    eidb_consq = bd.Database(db_eco)
     eidb_cyl = bd.Database(db_cyl)
     eidb_pellet = bd.Database(db_pellet)
 
@@ -96,15 +118,14 @@ def LCA_initialization(name: str, db: str, flows: list) -> tuple:
             proc_keys[linked_process[0]].append(linked_process[1])
             name_keys[linked_process[0]].append(linked_process)
 
-    all_methods = [m for m in bw.methods if 'EF v3.1 EN15804' in str(m)]
-    filtered_methods = [method for method in all_methods if "climate change:" not in method[1]]
-    removed_methods = [method[1] for method in all_methods if "climate change:" in method[1]]
+    # all_methods = [m for m in bw.methods if 'EF v3.1 EN15804' in str(m)]
+    # filtered_methods = [method for method in all_methods if "climate change:" not in method[1]]
 
-    impact_category = filtered_methods
+    impact_category = lcia_method(method)
     
     plot_x_axis = [0] * len(impact_category)
     for i in range(len(plot_x_axis)):
-        plot_x_axis[i] = impact_category[i][1]
+        plot_x_axis[i] = impact_category[i][2]
 
     product_details = {}
     product_details_code = {}
@@ -258,6 +279,17 @@ def import_LCA_results(file_name, flow, impact_category):
 
     return df
 
+def recipe_dataframe_split(df):
+    col_df = df.columns
+    col_df = col_df.to_list()
+
+    df_midpoint = df[col_df[:-3]]
+
+    df_endpoint = df[col_df[-3:]]
+    
+
+    return df_midpoint, df_endpoint
+
 def process_filter(FU):
     filtered_dict = {}
     for i, scenario in enumerate(FU):
@@ -291,7 +323,7 @@ def obtaining_sub_process(sub_product_details):
             amount[detail[1]].append(detail[3])
     return sub_proccess, amount
 
-def sub_process_initilization(sub_proccess, FU, name, idx_name):
+def sub_process_initilization(sub_proccess, FU, name, idx_name, method):
 
     filtered_dict = process_filter(FU)
     # Initializing empty dictionaries to store the results
@@ -317,7 +349,7 @@ def sub_process_initilization(sub_proccess, FU, name, idx_name):
             #     fu = [{flow[0] : filtered_dict}]
             #     p = flow
             else:
-                fu, p, ic, pxa, kokos = LCA_initialization(name, db_proc,flow)
+                fu, p, ic, pxa, kokos = LCA_initialization(name, db_proc, flow, method)
 
             
             temp[flow[0]] = []
@@ -567,3 +599,56 @@ def LCIA_normalization(directory, df):
             lst_norm_weighted[n] = lst[n] / lst_max
 
     return lst_norm_weighted
+
+def unique_elements_list(df_GWP, db_type):
+    unique_elements = []
+    for col in df_GWP.columns:
+        for i, row in df_GWP.iterrows():
+            for elm in row[col]:
+                x = elm[0]
+                if f'- {db_type}' in x:
+                    #print(key)
+                    x = x.replace(f' - {db_type}', '')
+                if 'alubox' in x:           
+                    x = x.replace('alubox ', '')
+                    if 'raw' in x and 'avoid' not in x.lower():
+                        x = x.replace('raw materials', 'Raw mat.')
+                    elif 'raw' in x and 'avoid' in x:
+                        x = 'Avoided virgin mat.'
+                    if 'production' in x:
+                        x = 'Production'
+                if 'Waste' in x:
+                    x = 'Incineration'
+                    
+                if 'market for electricity' in x:
+                    x = 'Avoided electricity'
+                if 'heating' in x:
+                    x = 'Avoided heat'
+                if 'market for polypropylene' in x:
+                    x = 'PP granulate'
+                if 'PE granulate' in x:
+                    x = 'PE granulate'
+                if 'no Energy Recovery' in x:
+                    x = x.replace(' no Energy Recovery', '')
+                    # print(x)
+                    # gwp = - gwp
+                if 'board box' in x:
+                    x = 'Cardboard box'
+                if 'packaging film' in x:
+                    x = 'PE packaging film prod.'
+                if 'pp' in x:
+                    x = x.replace('pp', 'PP')
+                if 'autoclave' in x:
+                    x = x.replace('autoclave', 'Autoclave')
+                if 'transport' in x:
+                    x = 'Transport'
+
+                if x not in unique_elements:
+                    unique_elements.append(x)
+                    # print(elm[0])
+    return unique_elements
+
+def round_down(value):
+    # https://stackoverflow.com/questions/41383787/round-down-to-2-decimal-in-python
+    value = math.floor(value * 10)/10.0
+    return value
