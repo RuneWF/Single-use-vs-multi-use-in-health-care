@@ -46,11 +46,17 @@ def lcia_method(method):
 
     return all_methods
 
-def LCA_initialization(name: str, db: str, flows: list, method: str) -> tuple:
-    if 'Consequential' in db:
-        db_eco = 'Consequential'
+def LCA_initialization(name: str, db: str, flows: list, method: str, db_type: str) -> tuple:
+
+    if 'CONSQ' in db_type and 'Ofir' in name:
+        db_eco = 'Consq EcoInvent'
+    elif 'APOS' in db_type and 'Ofir' in name:
+        db_eco = 'APOS EcoInevnt'
     else:
-        db_eco = 'APOS'
+        db_eco = 'Consequential'
+
+    print(db_eco)
+
     db_cyl = 'Cylinder'
     db_pellet = 'Pellet'
     bd.projects.set_current(name)
@@ -298,7 +304,7 @@ def process_filter(FU):
             for sc_proc_key, sc_proc_item in sc_item.items():
                 
                 # N2O
-                if 'Consequential' in sc_proc_key[0]:
+                if 'Consequential' in sc_proc_key[0] or 'Consq EcoInvent' in sc_proc_key[0] or 'APOS EcoInevnt' in sc_proc_key[0]:
                     filtered_dict[sc_proc_key] = sc_proc_item 
                     # print(sc_item)
                 # Avoided energy and heat
@@ -323,7 +329,7 @@ def obtaining_sub_process(sub_product_details):
             amount[detail[1]].append(detail[3])
     return sub_proccess, amount
 
-def sub_process_initilization(sub_proccess, FU, name, idx_name, method):
+def sub_process_initilization(sub_proccess, FU, name, idx_name, method, db_type):
 
     filtered_dict = process_filter(FU)
     # Initializing empty dictionaries to store the results
@@ -341,7 +347,7 @@ def sub_process_initilization(sub_proccess, FU, name, idx_name, method):
             
             db_proc = sub_proc[proc_idx][0][0]
             # print(f'Flow : {flow}, Database: {db_proc}, Subprocess : {sub_proc}')
-            if db_proc == 'Consequential' and sub_proc[proc_idx][0] in filtered_dict:
+            if db_proc == 'Consequential' or 'APOS' in db_proc  or db_proc == 'Consq EcoInvent' and sub_proc[proc_idx][0] in filtered_dict:
                 #print(flow)
                 fu = [{flow[0] : filtered_dict}]
                 p = flow
@@ -349,7 +355,7 @@ def sub_process_initilization(sub_proccess, FU, name, idx_name, method):
             #     fu = [{flow[0] : filtered_dict}]
             #     p = flow
             else:
-                fu, p, ic, pxa, kokos = LCA_initialization(name, db_proc, flow, method)
+                fu, p, ic, pxa, kokos = LCA_initialization(name, db_proc, flow, method, db_type)
 
             
             temp[flow[0]] = []
@@ -435,6 +441,9 @@ def process_update(FU, FU_sub):
                         elif 'Handwash' in f'{funky_key_sc}' and 'Handwash' in fu_ind_key:
                             functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
                             updated_keys.add(fu_ind_key)
+                        elif 'energy avoided' in f'{funky_key_sc}' and 'energy avoided' in fu_ind_key:
+                            functional_unit_sub_new[fcu][fu_ind].update({fu_ind_key: fu_sc_val})
+                            updated_keys.add(fu_ind_key)
 
     fu_sub_updated = []
     for scenario in range(len(functional_unit_sub_new)):
@@ -482,7 +491,6 @@ def LCIA_contribution(impact_category, flow_count, sub_proc, FU_sub, amount, idx
                     for FU_dict in FU_sub[func_unit]:
                         for  dk, di in FU_dict.items():
                             # print(dk, di)
-                            div = [proc_val for proc_val in di.values()][0]
                             if dk in f and di.keys() not in accounted_flows:
                                 
                                 accounted_flows.append(di.keys())
@@ -547,7 +555,7 @@ def dataframe_element_scaling(df_test):
             row[i] /= scaling_factor
         # df_norm = copy.deepcopy(df_tot)
 
-    return df_tot, df_norm, df_cols
+    return df_tot, df_norm
 
 def dataframe_column_structure(impact_category):
     if type(impact_category) == tuple:
@@ -606,6 +614,7 @@ def unique_elements_list(df_GWP, db_type):
         for i, row in df_GWP.iterrows():
             for elm in row[col]:
                 x = elm[0]
+                gwp = elm[1]
                 if f'- {db_type}' in x:
                     #print(key)
                     x = x.replace(f' - {db_type}', '')
@@ -619,19 +628,23 @@ def unique_elements_list(df_GWP, db_type):
                         x = 'Production'
                 if 'Waste' in x:
                     x = 'Incineration'
-                    
-                if 'market for electricity' in x:
+                if 'energy avoided' in x:
                     x = 'Avoided electricity'
                 if 'heating' in x:
                     x = 'Avoided heat'
                 if 'market for polypropylene' in x:
-                    x = 'PP granulate'
+                    if gwp < 0:
+                        x = 'Avoided PP'
+                    else:
+                        x = 'PP granulate'
                 if 'PE granulate' in x:
-                    x = 'PE granulate'
+                    if gwp < 0:
+                        x = 'Avoided PE'
+                    else:
+                        x = 'PE granulate'
                 if 'no Energy Recovery' in x:
                     x = x.replace(' no Energy Recovery', '')
-                    # print(x)
-                    # gwp = - gwp
+
                 if 'board box' in x:
                     x = 'Cardboard box'
                 if 'packaging film' in x:
@@ -646,6 +659,8 @@ def unique_elements_list(df_GWP, db_type):
                 if x not in unique_elements:
                     unique_elements.append(x)
                     # print(elm[0])
+    unique_elements.append('Total')
+
     return unique_elements
 
 def round_down(value):

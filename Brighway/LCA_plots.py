@@ -28,10 +28,86 @@ from  standards import *
 import life_cycle_assessment as lc
 importlib.reload(lc)
 
+def flow_name_update(x, gwp, db_type, database_name):
+    if 'Ananas consq' in database_name:
+        if f'- {db_type}' in x:
+            #print(key)
+            x = x.replace(f' - {db_type}', '')
+        if 'alubox' in x:           
+            x = x.replace('alubox ', '')
+            if 'raw' in x and 'avoid' not in x.lower():
+                x = x.replace('raw materials', 'Raw mat.')
+            elif 'raw' in x and 'avoid' in x:
+                x = 'Avoided virgin mat.'
+            if 'production' in x:
+                x = 'Production'
+        if 'Waste' in x:
+            x = 'Incineration'
+            
+        if 'energy avoided' in x:
+            x = 'Avoided electricity'
+        if 'heating' in x:
+            x = 'Avoided heat'
+        if 'market for polypropylene' in x:
+            if gwp < 0:
+                x = 'Avoided PP'
+            else:
+                x = 'PP granulate'
+        if 'PE granulate' in x:
+            if gwp < 0:
+                x = 'Avoided PE'
+            else:
+                x = 'PE granulate'
+        if 'no Energy Recovery' in x:
+            x = x.replace(' no Energy Recovery', '')
+
+        if 'board box' in x:
+            x = 'Cardboard box'
+        if 'packaging film' in x:
+            x = 'PE packaging film prod.'
+        if 'pp' in x:
+            x = x.replace('pp', 'PP')
+        if 'autoclave' in x:
+            x = x.replace('autoclave', 'Autoclave')
+        if 'transport' in x:
+            x = 'Transport'
+
+    elif 'Lobster' in database_name:
+            if 'sc1' in x:
+                x = x.replace(f'sc1 ', '')
+            elif 'sc2' in x:
+                x = x.replace(f'sc2 ', '')
+            elif 'sc3' in x:
+                x = x.replace(f'sc3 ', '')
+            elif 'Waste' in x:
+                x = 'Incineration'
+            elif 'market for electricity' in x:
+                x = 'Avoided electricity'
+            elif 'heating' in x:
+                x = 'Avoided heat'
+            elif 'erbe' in x:
+                x = 'Erbe'
+            elif '(use) DK' in x:
+                x = x.replace(' (use) DK', '')
+            elif '(use) - DK' in x:
+                x = x.replace(' (use) - DK', '')
+            elif '(prod) DE' in x:
+                x = x.replace(' (prod) DE', '')
+            elif 'Remanufacturing' in x:
+                x = 'Remanufacturing'
+
+    return x
 
 
-def scaled_FU_plot(df_scaled, plot_x_axis, colors, flow_legend, save_dir, db_type, impact_category):
+def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category):
     import os
+
+    
+    flow_legend = inputs[0]
+    colors = inputs[1]
+    save_dir = inputs[2]
+    db_type = inputs[3]
+
     columns_to_plot = df_scaled.columns
 
     index_list = list(df_scaled.index.values)
@@ -39,7 +115,6 @@ def scaled_FU_plot(df_scaled, plot_x_axis, colors, flow_legend, save_dir, db_typ
     # Plotting
     fig, ax = plt.subplots()
 
-    num_processes = len(df_scaled)
     bar_width = 1/(len(index_list) + 1) 
     index = np.arange(len(columns_to_plot))
 
@@ -72,14 +147,18 @@ def scaled_FU_plot(df_scaled, plot_x_axis, colors, flow_legend, save_dir, db_typ
     plt.savefig(os.path.join(save_dir, f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.jpg'), bbox_inches='tight')
     plt.show()
 
-def single_score_plot(directory, df_tot, colors, flow_legend, save_dir, db_type):
+def single_score_plot(directory, df_tot, inputs):
+
+    flow_legend = inputs[0]
+    colors = inputs[1]
+    save_dir = inputs[2]
+    db_type = inputs[3]
+
     lst_scaled = lc.LCIA_normalization(directory, df_tot)
 
     index_list = list(df_tot.index.values)
     # Plotting
     fig, ax = plt.subplots(figsize=(9,7))
-
-    num_processes = len(lst_scaled)
     bar_width = 1/(len(index_list)-1) 
     index = np.arange(len(index_list))   
 
@@ -97,14 +176,19 @@ def single_score_plot(directory, df_tot, colors, flow_legend, save_dir, db_type)
     plt.savefig(os.path.join(save_dir, f'scaled_single_score_multi_{db_type}.jpg'), bbox_inches='tight')
     plt.show()
 
-def gwp_lc_plot(df_GWP, flow_legend, category_mapping, colors, categories, save_dir, db_type):
+def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
     import os
+    
+    flow_legend = inputs[0]
+    colors = inputs[1]
+    save_dir = inputs[2]
+    db_type = inputs[3]
+    database_name = inputs[4]
 
     x_axis = []
     GWP_value = []
 
     for col in df_GWP.columns:
-
         for i, row in df_GWP.iterrows():
             lst_x = []
             lst_GWP = []
@@ -114,42 +198,8 @@ def gwp_lc_plot(df_GWP, flow_legend, category_mapping, colors, categories, save_
                 gwp = lst[1]
                 # print(lst)
                 #print(gwp,x)
-                if f'- {db_type}' in x:
-                    #print(key)
-                    x = x.replace(f' - {db_type}', '')
-                if 'alubox' in x:           
-                    x = x.replace('alubox ', '')
-                    if 'raw' in x and 'avoid' not in x.lower():
-                        x = x.replace('raw materials', 'Raw mat.')
-                    elif 'raw' in x and 'avoid' in x:
-                        x = 'Avoided virgin mat.'
-                    if 'production' in x:
-                        x = 'Production'
-                if 'Waste' in x:
-                    x = 'Incineration'
-                    
-                if 'market for electricity' in x:
-                    x = 'Avoided electricity'
-                if 'heating' in x:
-                    x = 'Avoided heat'
-                if 'market for polypropylene' in x:
-                    x = 'PP granulate'
-                if 'PE granulate' in x:
-                    x = 'PE granulate'
-                if 'no Energy Recovery' in x:
-                    x = x.replace(' no Energy Recovery', '')
-                    # print(x)
-                    # gwp = - gwp
-                if 'board box' in x:
-                    x = 'Cardboard box'
-                if 'packaging film' in x:
-                    x = 'PE packaging film prod.'
-                if 'pp' in x:
-                    x = x.replace('pp', 'PP')
-                if 'autoclave' in x:
-                    x = x.replace('autoclave', 'Autoclave')
-                if 'transport' in x:
-                    x = 'Transport'
+
+                x = flow_name_update(x, gwp, db_type, database_name)
 
                 lst_x.append(x)
                 lst_GWP.append(gwp)
@@ -183,7 +233,6 @@ def gwp_lc_plot(df_GWP, flow_legend, category_mapping, colors, categories, save_
                 temp.append(val)
                 # print(val)
                 plot_legend[key].append(val)
-
 
     color_map = {}
     #unique_processes = {process for sublist in x_axis for process in sublist}
@@ -248,7 +297,7 @@ def gwp_lc_plot(df_GWP, flow_legend, category_mapping, colors, categories, save_
                             legend_handles[process_name] = bar
 
                         # Add plot markers (symbols) at the bottom
-                        ax.plot(scenario_index[i], -0.4, marker=idx[scenario], color='gray')
+                        ax.plot(scenario_index[i], y_axis_values[0]+0.1, marker=idx[scenario], color='gray')
 
                         break
 
@@ -262,8 +311,8 @@ def gwp_lc_plot(df_GWP, flow_legend, category_mapping, colors, categories, save_
         ax.set_xticklabels(categories)
 
         # Axis limits
-        ax.set_ylim(-.45, 1.53)
-        ax.set_yticks(np.arange(-0.4, 1.51, step=0.1))
+        ax.set_ylim(y_axis_values[0]- 0.03, y_axis_values[1] + 0.05)
+        ax.set_yticks(np.arange(y_axis_values[0], y_axis_values[1]+0.01, step=y_axis_values[2]))
         ax.set_ylabel("Global Warming Potential [kg CO$_2$e]")
         ax.set_title(f'GWP impact for each life stage for 1 FU - {db_type}')
 
@@ -282,3 +331,25 @@ def gwp_lc_plot(df_GWP, flow_legend, category_mapping, colors, categories, save_
     else:
         print('The x-axis and GWP values have different sizes')
 
+def category_organization(database_name):
+    categories = ["Raw mat. + prod.", "Use", "Transport", "EoL", "Total"]
+
+    if 'Ananas consq' in database_name:
+        category_mapping = {
+        "Raw mat. + prod.": ["PP production", "Cardboard box", "Scalpel", "Raw mat.", "Production", "PE granulate", "PP granulate", "PE packaging film prod."],
+        "Use": ["Autoclave", "disinfection", "Handwash", "Remanufacturing"],
+        "Transport": ["Transport"],
+        "EoL": ["PP incineration", "PE incineration", "Avoided heat", "Avoided electricity", "EoL melting", "EoL mixed sorting", "Avoided virgin mat.", "Avoided PP", "Avoided PE"],
+        "Total": ["Total"]
+        }
+    
+    elif 'Lobster' in database_name:
+        category_mapping = {
+        "Raw mat. + prod.": ["Diathermy", "Bipolar burner", "Scalpel"],
+        "Use": ["Autoclave", "Dishwasher", "Erbe", "Remanufacturing"],
+        "Transport": ["Transport"],
+        "EoL": ["Incineration", "Avoided heat", "Avoided electricity"],
+        "Total": ["Total"]
+        }
+
+    return categories, category_mapping
