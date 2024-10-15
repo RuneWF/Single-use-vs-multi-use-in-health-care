@@ -259,7 +259,7 @@ def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
         # Create the plot
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        idx = ['x', '^', 'o']  # List of markers for scenarios
+        idx = ['x', '^', 'o', 'D']  # List of markers for scenarios
         all_markers = []  # List to store Line2D objects for markers
 
         # Main plotting logic
