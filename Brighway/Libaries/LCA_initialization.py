@@ -3,6 +3,15 @@ import bw2io as bi
 import bw2calc as bc
 import bw2analyzer as bwa
 import brightway2 as bw 
+import os
+
+def create_results_folder(path, name, db):
+    save_dir = f'{path}\{name}_{db}'
+    # Create the directory if it doesn't exist
+    os.makedirs(save_dir, exist_ok=True)
+    print(f'Folder name {name} created')
+    
+    return save_dir
 
 def LCA_initialization_og(name, db, flows):
     bd.projects.set_current(name)

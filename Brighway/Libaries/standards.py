@@ -12,12 +12,14 @@ def swap_rows(df, row1, row2):
     df.iloc[row1], df.iloc[row2] =  df.iloc[row2].copy(), df.iloc[row1].copy()
     return df
 
-def results_folder(name):
-    save_dir = f'Single-use-vs-multi-use-in-health-care\{name}'
+def results_folder(path, name, db):
+    save_dir = f'{path}\{name}_{db}'
     # Create the directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
     print(f'Folder name {name} created')
+    
     return save_dir
+
 
 
 
