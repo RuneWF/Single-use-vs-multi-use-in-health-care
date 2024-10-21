@@ -46,6 +46,18 @@ def lcia_method(method):
 
     return all_methods
 
+def get_flows(name: str, db: str, db_type: str):
+    bd.projects.set_current(name)
+    db = bd.Database(db)
+    flows = []
+    for act in db:
+        if db_type in act['name']:
+            flows.append(act['name'])
+            flows.sort()
+            
+
+    return flows
+
 def LCA_initialization(name: str, db: str, flows: list, method: str, db_type: str) -> tuple:
 
     if 'CONSQ' in db_type and 'Ofir' in name:
@@ -59,18 +71,27 @@ def LCA_initialization(name: str, db: str, flows: list, method: str, db_type: st
 
     db_cyl = 'Cylinder'
     db_pellet = 'Pellet'
-    bd.projects.set_current(name)
+    db_ofir = 'Ananas consq'
 
-    bi.bw2setup()
+
+    bd.projects.set_current(name)
+    
+    # bi.bw2setup()
+    if 'biosphere3' in bd.databases:
+        pass
+        # print('biosphere3 is present')
+    else:
+        bi.bw2setup()
     eidb = bd.Database(db)
     eidb_consq = bd.Database(db_eco)
     eidb_cyl = bd.Database(db_cyl)
     eidb_pellet = bd.Database(db_pellet)
+    eidb_ofir = bd.Database(db_ofir)
 
     procces_keys = {key: None for key in flows}
 
     size = len(flows)
-    all_acts = list(eidb) + list(eidb_consq) + list(eidb_cyl) + list(eidb_pellet)
+    all_acts = list(eidb) + list(eidb_consq) + list(eidb_cyl) + list(eidb_pellet) + list(eidb_ofir)
 
     for act in all_acts:
         for proc in range(size):
@@ -212,7 +233,6 @@ def life_cycle_impact_assessment(flows, functional_unit, impact_categories, proc
         impact_categories = [impact_categories]
 
     # Define the dimensions
-    n = len(flows)  # number of rows (flows)
     m = len(impact_categories)  # number of columns (impact categories)
 
     # Create a DataFrame to store results
@@ -225,12 +245,14 @@ def life_cycle_impact_assessment(flows, functional_unit, impact_categories, proc
     for col, impact in enumerate(impact_categories):
         # Loop through flows
         for f in flows:
+            # print(f)
             df_lst = []  # Clear list for each flow in each impact category
             for func_unit in range(len(functional_unit)):
                 for FU_key, FU_item in functional_unit[func_unit].items():
                     # cat = impact_categories[col]
                     if f in FU_key:
                         # Perform LCA
+                        # print(FU_item, impact)
                         lca = bw.LCA(FU_item, impact)
                         lca.lci()
                         lca.lcia()
@@ -549,7 +571,7 @@ def dataframe_element_scaling(df_test):
 
 
     for i in df_cols:
-        scaling_factor = max(df_norm[i])
+        scaling_factor = max(abs(df_norm[i]))
         # print(df_tot[i])
         for idx, row in df_norm.iterrows():
             row[i] /= scaling_factor
