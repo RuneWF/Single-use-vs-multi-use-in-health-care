@@ -2,54 +2,66 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.ticker as mtick
-import matplotlib.cm as cm
-import math
-import plotly.graph_objects as go
+# import matplotlib.ticker as mtick
+# import matplotlib.cm as cm
+# import math
+# import plotly.graph_objects as go
 from collections import OrderedDict
 from matplotlib.lines import Line2D  # Import for creating custom legend markers
-import json
-import copy
-import random
-import re
+# import json
+# import copy
+# import random
+# import re
 import seaborn as sns
 import importlib
 
-
+import os
 # Import BW25 packages
-import bw2data as bd
-import bw2io as bi
-import bw2calc as bc
-import bw2analyzer as bwa
-import brightway2 as bw 
-from bw2calc import LeastSquaresLCA
+# import bw2data as bd
+# import bw2io as bi
+# import bw2calc as bc
+# import bw2analyzer as bwa
+# import brightway2 as bw 
+# from bw2calc import LeastSquaresLCA
 
 from  standards import *
 import life_cycle_assessment as lc
 importlib.reload(lc)
 
+# Function to update the flow name and simplify them
 def flow_name_update(x, gwp, db_type, database_name):
     if 'Ananas consq' in database_name or 'sterilization' in database_name:
         # print(x, gwp)
-        x_og = x
+        
         if f'- {db_type}' in x:
             #print(key)
             x = x.replace(f' - {db_type}', '')
-        if 'alubox' in x:           
-            x = x.replace('alubox ', '')
-            if ('raw' in x and 'avoid' in x) or ('raw' in x and gwp < 0):
+        x_og = x
+        if 'alubox' in x:       
+
+            # x = x.replace('alubox ', '')
+            if 'avoided alubox' in x:
                 x = 'Avoided mat. prod.'
-            elif 'raw' in x and 'avoid' not in x.lower():
-                x = x.replace('raw materials', 'Raw mat.')
-        
+                if gwp < 0:
+                    gwp = -gwp
+                # print(x_og, x, gwp) 
+            if 'raw materials' in x:
+                x = 'Raw mat.' # x.replace('raw materials', 'Raw mat.')
+                if gwp < 0:
+                    gwp = -gwp
+                # print(x_og, x, gwp) 
             if 'production' in x:
                 x = 'Manufacturing'
+                # print(x_og, x, gwp) 
             if 'EoL' in x:
                 x = 'Avoided mat. prod.'
                 if gwp > 0:
                     # print(x_og, gwp)
                     gwp = -gwp
                     # print(x_og, gwp)
+            print(x_og, x, gwp) 
+
+
         if 'sheet manufacturing' in x:
             x = 'Manufacturing'
         if 'electricity' in x:
@@ -66,13 +78,12 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Avoided mat. prod.'
             else:
                 x = 'Raw mat.'
-        if 'no Energy Recovery' in x:
+        if 'no Energy Recovery' in x or 'plastic incineration' in x:
             x = 'Incineration'#x.replace(' no Energy Recovery', '')
 
         if 'board box' in x or 'packaging film' in x:
             x = 'Packaging'
-        # if 'pp' in x:
-        #     x = x.replace('pp', 'PP')
+
         if 'autoclave' in x:
             x = x.replace('autoclave', 'Autoclave')
         if 'transport' in x:
@@ -106,18 +117,17 @@ def flow_name_update(x, gwp, db_type, database_name):
             elif 'Remanufacturing' in x:
                 x = 'Remanufacturing'
 
-    return x
+    return x, gwp
 
-
+# Function to create the scaled FU plot
 def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
-    import os
-
     
     flow_legend = inputs[0]
     colors = inputs[1]
     save_dir = inputs[2]
     db_type = inputs[3]
 
+    # Extracting the columns plot
     columns_to_plot = df_scaled.columns
 
     index_list = list(df_scaled.index.values)
@@ -133,32 +143,28 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     for i, process in enumerate(df_scaled.index):
         values = df_scaled.loc[process, columns_to_plot].values
         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
-        # print(min(values))
-        if min_val > min(values):
-            min_val = min(values)
-
 
     # Setting labels and title
     ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]}',weight='bold',fontsize=16)
     ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
     ax.set_xticklabels(plot_x_axis,  weight='bold', fontsize=12)
 
+    # Specifying the direction of the text on the axis should be rotated
     if 'endpoint' not in impact_category[0][0]:
         plt.xticks(rotation=90)
     else: 
         plt.xticks(rotation=0)
 
-    # plt.yticks(np.arange(-1.6, 1.01, step=0.2))
-    # plt.ylim(-1.62,1.03)
-
-    # fig.(weight='bold', fontsize=12)
-
+    # Setting the legend
     ax.legend(flow_legend,bbox_to_anchor=(1.01, legend_position, .1, 0), loc="lower left",
                 mode="expand", borderaxespad=0,  ncol=1, fontsize=10)
+    
+    # Saving and showing the plot
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.jpg'), bbox_inches='tight')
     plt.show()
 
+# Function for single score plot for EF LCIA results
 def single_score_plot(directory, df_tot, inputs):
 
     flow_legend = inputs[0]
@@ -166,6 +172,7 @@ def single_score_plot(directory, df_tot, inputs):
     save_dir = inputs[2]
     db_type = inputs[3]
 
+    # Creating an list where each column is
     lst_scaled = lc.LCIA_normalization(directory, df_tot)
 
     index_list = list(df_tot.index.values)
@@ -367,7 +374,7 @@ def category_organization(database_name):
 
     return categories, category_mapping
 
-def gwp_scenario_plot(df_GWP, inputs):
+def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     flow_legend = inputs[0]
     colors = inputs[1]
     save_dir = inputs[2]
@@ -396,8 +403,8 @@ def gwp_scenario_plot(df_GWP, inputs):
                 # print(gwp,x)
 
                 x = flow_name_update(x, gwp, db_type, database_name)
-                if 'Avoided mat. prod.' in x and gwp > 0:
-                    gwp = -gwp
+                # if 'Avoided mat. prod.' in x and gwp > 0:
+                #     gwp = -gwp
 
                 lst_x.append(x)
                 lst_GWP.append(gwp)
@@ -450,21 +457,25 @@ def gwp_scenario_plot(df_GWP, inputs):
                 unit = row['Category'][0]
                 total = row['Value']
                 # print(unit, total)
-                ax.plot(unit, total, '^', color='k', label='Total' if idx == 0 else "")
+                ax.plot(unit, total, 'o', color='k', markersize=5, label='Total' if idx == 0 else "")
 
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.append(plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=10, label='Total'))
+    handles.append(plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=7, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, .591, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
+
+    y_min = y_axis_values[0]
+    y_max = y_axis_values[1]
+    steps = y_axis_values[2]
 
     # Setting labels and title
     plt.title(f'GWP impact for each life stage for 1 FU - {db_type}', weight='bold')
     plt.ylabel('Global Warming Potential [kg CO$_2$e]', weight='bold')
-    plt.ylim(-.85,1.65)
-    plt.yticks(np.arange(-.8, 1.6, step=0.2))
+    plt.ylim(y_min-0.05, y_max+0.05)
+    plt.yticks(np.arange(y_min, y_max, step=steps))
     plt.xticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f'_GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')
     plt.show()
 

@@ -24,7 +24,7 @@ from bw2calc import LeastSquaresLCA
 
 from standards import *
 
-save_dir = results_folder('Results')
+# save_dir = results_folder('Results')
 
 def MC_set_up(flows, database):
     eidb = bd.Database(database)
@@ -197,7 +197,7 @@ def MC_simulation(iterations, flows, database, impact_category, results_file):
 
         return Monte_Carlo_dct, raw_data
 
-def MC_graphs(flow_legend, data, iterations):
+def MC_graphs(flow_legend, data, iterations, save_dir):
     
     for scenario, data_point in enumerate(data):
         data_point = data_point.tolist()
