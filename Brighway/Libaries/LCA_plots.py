@@ -31,16 +31,14 @@ importlib.reload(lc)
 # Function to update the flow name and simplify them
 def flow_name_update(x, gwp, db_type, database_name):
     if 'Ananas consq' in database_name or 'sterilization' in database_name:
-        # print(x, gwp)
-        
         if f'- {db_type}' in x:
             #print(key)
             x = x.replace(f' - {db_type}', '')
         x_og = x
         if 'alubox' in x:       
 
-            # x = x.replace('alubox ', '')
-            if 'avoided alubox' in x:
+            x = x.replace('alubox ', '')
+            if 'avoided' in x:
                 x = 'Avoided mat. prod.'
                 if gwp < 0:
                     gwp = -gwp
@@ -54,12 +52,10 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Manufacturing'
                 # print(x_og, x, gwp) 
             if 'EoL' in x:
-                x = 'Avoided mat. prod.'
-                if gwp > 0:
+                x = 'Recycling'
+                
                     # print(x_og, gwp)
-                    gwp = -gwp
-                    # print(x_og, gwp)
-            print(x_og, x, gwp) 
+            # print(x_og, x, gwp) 
 
 
         if 'sheet manufacturing' in x:
@@ -359,7 +355,7 @@ def category_organization(database_name):
         "Raw mat. + prod.": ["Raw mat.", "Manufacturing", "Packaging"],
         "Use": ["Autoclave", "Box cleaning"],
         "Transport": ["Transport"],
-        "EoL": ["Incineration", "Avoided mat. prod.", "Avoided energy prod."],
+        "EoL": ["Incineration", "Recycling", "Avoided mat. prod.", "Avoided energy prod."],
         "Total": ["Total"]
         }
     
@@ -381,16 +377,12 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     db_type = inputs[3]
     database_name = inputs[4]
 
-    categories, category_mapping = category_organization(database_name)
-    columns = []
-    for key, item in category_mapping.items():
-        for ilst in item:
-            columns.append(ilst)
+    columns = lc.unique_elements_list(database_name)
 
 
     x_axis = []
     GWP_value = []
-
+    tot = {}
     for col in df_GWP.columns:
         for i, row in df_GWP.iterrows():
             lst_x = []
@@ -402,14 +394,14 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
                 # print(lst)
                 # print(gwp,x)
 
-                x = flow_name_update(x, gwp, db_type, database_name)
-                # if 'Avoided mat. prod.' in x and gwp > 0:
-                #     gwp = -gwp
+                x, gwp = flow_name_update(x, gwp, db_type, database_name)
+                if 'Avoided mat. prod.' in x and gwp > 0:
+                    gwp = -gwp
 
                 lst_x.append(x)
                 lst_GWP.append(gwp)
                 gwp_tot += gwp
-            
+            print(i, gwp_tot)
             lst_GWP.append(gwp_tot)
             lst_x.append('Total')
             x_axis.append(lst_x)
@@ -457,23 +449,27 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
                 unit = row['Category'][0]
                 total = row['Value']
                 # print(unit, total)
-                ax.plot(unit, total, 'o', color='k', markersize=5, label='Total' if idx == 0 else "")
-
-    # Custom legend with 'Total' included
-    handles, labels = ax.get_legend_handles_labels()
-
-    handles.append(plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=7, label='Total'))
-    ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, .591, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
+                ax.plot(unit, total, '^', color='k', markersize=5, label='Total' if idx == 0 else "")
 
     y_min = y_axis_values[0]
     y_max = y_axis_values[1]
     steps = y_axis_values[2]
+    leg_pos = y_axis_values[3]
+
+    # Custom legend with 'Total' included
+    handles, labels = ax.get_legend_handles_labels()
+
+    handles.append(plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=7, label='Total'))
+    ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
+
+
 
     # Setting labels and title
     plt.title(f'GWP impact for each life stage for 1 FU - {db_type}', weight='bold')
     plt.ylabel('Global Warming Potential [kg CO$_2$e]', weight='bold')
-    plt.ylim(y_min-0.05, y_max+0.05)
     plt.yticks(np.arange(y_min, y_max, step=steps))
+    plt.ylim(y_min-0.05, y_max+0.1)
+    
     plt.xticks(rotation=0)
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')

@@ -1,45 +1,29 @@
-# Import packages we'll need later on in this tutorial
-import os
-import matplotlib.pyplot as plt
-# import numpy as np
 import pandas as pd
-# import matplotlib.ticker as mtick
-# import matplotlib.cm as cm
-import math
-# import plotly.graph_objects as go
-# from collections import OrderedDict
-# from matplotlib.lines import Line2D  # Import for creating custom legend markers
 import json
 import copy
-# import random
-# import re
-# import seaborn as sns
-# import importlib
-
 
 # Import BW25 packages
 import bw2data as bd
 import bw2io as bi
-# import bw2calc as bc
-# import bw2analyzer as bwa
 import brightway2 as bw 
-# from bw2calc import LeastSquaresLCA
 
+# Importing self-made libaries
 from standards import *
 import LCA_plots as lp
 
 
-# Function to obtain the LCIA category to calculate
+# Function to obtain the LCIA category to calculate the LCIA results
 def lcia_method(method):
-    # Checking if the LCIA is ReCiPe, and ensuring with lower it can use different capitilixation of the word
+    # Checking if the LCIA method is ReCiPe, and ignores difference between lower and upper case 
     if 'recipe' in method.lower():
-        # Obtaining midpoint
-        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H)' in str(m) and 'no LT' not in str(m)]
+        # Using H (hierachly) due to it has a 100 year span
+        # Obtaining the midpoint categpries and ignoring land transformation (Land use still included)
+        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H)' in str(m) and 'no LT' not in str(m)] # Midpoint
 
-        # Obtaining endpoint
+        # Obtaining the endpoint categories and ignoring land transformation
         endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H)' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
 
-        # Combing midpoint and endpoint, where endpoint is put at the end
+        # Combining midpoint and endpoint, where endpoint is added to the list of the midpoint categories
         for meth in endpoint:
             all_methods.append(meth)
 
@@ -49,6 +33,7 @@ def lcia_method(method):
     elif 'ef' in method.lower():
         all_methods = [m for m in bw.methods if 'EF v3.1 EN15804' in str(m) and "climate change:" not in str(m)]
         print('EF is selected')
+
     else:
         print('Select either EF or ReCiPe as the LCIA methos')
         all_methods = []
@@ -329,7 +314,7 @@ def calculate_lcia(calculate, initialization, file_name, sheet_name):
 
     database_project, database_name, flows, lcia_meth, db_type = initialization
     # Performing the initialization
-    FU, FU_proc, impact_category, plot_x_axis_all, sub_product_details = LCA_initialization(database_project, database_name, flows, lcia_meth, db_type)
+    FU, FU_proc, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_meth, db_type)
     
     # Checking if the LCIA calculations needs to be performed  
     if calculate is True:
