@@ -1,28 +1,11 @@
-# Import packages
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-# import matplotlib.ticker as mtick
-# import matplotlib.cm as cm
-# import math
-# import plotly.graph_objects as go
 from collections import OrderedDict
 from matplotlib.lines import Line2D  # Import for creating custom legend markers
-# import json
-# import copy
-# import random
-# import re
 import seaborn as sns
 import importlib
-
 import os
-# Import BW25 packages
-# import bw2data as bd
-# import bw2io as bi
-# import bw2calc as bc
-# import bw2analyzer as bwa
-# import brightway2 as bw 
-# from bw2calc import LeastSquaresLCA
 
 from  standards import *
 import life_cycle_assessment as lc
@@ -42,22 +25,16 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Avoided mat. prod.'
                 if gwp < 0:
                     gwp = -gwp
-                # print(x_og, x, gwp) 
             if 'raw materials' in x:
-                x = 'Raw mat.' # x.replace('raw materials', 'Raw mat.')
+                x = 'Raw mat.' 
                 if gwp < 0:
-                    gwp = -gwp
-                # print(x_og, x, gwp) 
+                    gwp = -gwp 
             if 'production' in x:
-                x = 'Manufacturing'
-                # print(x_og, x, gwp) 
+                x = 'Manufacturing' 
             if 'EoL' in x:
                 x = 'Recycling'
-                
-                    # print(x_og, gwp)
-            # print(x_og, x, gwp) 
-
-
+        if 'waste paper to pulp' in x:
+            x = 'Avoided mat. prod.'
         if 'sheet manufacturing' in x:
             x = 'Manufacturing'
         if 'electricity' in x:
@@ -75,8 +52,7 @@ def flow_name_update(x, gwp, db_type, database_name):
             else:
                 x = 'Raw mat.'
         if 'no Energy Recovery' in x or 'plastic incineration' in x:
-            x = 'Incineration'#x.replace(' no Energy Recovery', '')
-
+            x = 'Incineration'
         if 'board box' in x or 'packaging film' in x:
             x = 'Packaging'
 
@@ -370,7 +346,9 @@ def category_organization(database_name):
 
     return categories, category_mapping
 
+# Function to plot the global warming potentials showing the contribution of each life stage
 def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
+    # Using the inputs to specify the different variables
     flow_legend = inputs[0]
     colors = inputs[1]
     save_dir = inputs[2]
@@ -382,18 +360,21 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
     x_axis = []
     GWP_value = []
-    tot = {}
+
+    # Obtaining the contribution of each scenario for the life stages 
     for col in df_GWP.columns:
         for i, row in df_GWP.iterrows():
+            # Empty list to store the process name and the value
             lst_x = []
             lst_GWP = []
+            # initial value for the total value of the gwp total
             gwp_tot = 0
+            # Iterating over each nested list
             for lst in row[col]:
                 x = lst[0]
                 gwp = lst[1]
-                # print(lst)
-                # print(gwp,x)
 
+                # Updating the name of process
                 x, gwp = flow_name_update(x, gwp, db_type, database_name)
                 if 'Avoided mat. prod.' in x and gwp > 0:
                     gwp = -gwp
@@ -401,7 +382,10 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
                 lst_x.append(x)
                 lst_GWP.append(gwp)
                 gwp_tot += gwp
-            print(i, gwp_tot)
+            
+            print(f'Total for {i} = {gwp_tot}')
+
+            # Setting the updated list back into a new nested list
             lst_GWP.append(gwp_tot)
             lst_x.append('Total')
             x_axis.append(lst_x)
@@ -409,19 +393,19 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
 
     # Create an empty dictionary to collect the data
-    test_df = {}
+    key_dic = {}
 
     # Collect the data into the dictionary
     for i, p in enumerate(GWP_value):
         for a, b in enumerate(p):
             key = (flow_legend[i], x_axis[i][a])
-            if key in test_df:
-                test_df[key] += b
+            if key in key_dic:
+                key_dic[key] += b
             else:
-                test_df[key] = b
+                key_dic[key] = b
 
     # Convert the dictionary into a DataFrame
-    df = pd.DataFrame(list(test_df.items()), columns=['Category', 'Value'])
+    df = pd.DataFrame(list(key_dic.items()), columns=['Category', 'Value'])
 
     # Separate 'Total' values from the rest
     totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Total']
@@ -448,7 +432,6 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
             if flow in row['Category'][0]:
                 unit = row['Category'][0]
                 total = row['Value']
-                # print(unit, total)
                 ax.plot(unit, total, '^', color='k', markersize=5, label='Total' if idx == 0 else "")
 
     y_min = y_axis_values[0]

@@ -12,6 +12,38 @@ from standards import *
 import LCA_plots as lp
 
 
+def select_project_and_database():
+    projects = bd.projects.report()
+    proj_dct = {}
+    for i, proj in enumerate(projects):
+        proj_dct[proj[0]] = i
+
+    proj_input = int(input(f'Select the given number for the database wished to use\n {proj_dct}'))
+
+    chosen_proj = ''
+    for key, item in proj_dct.items():
+        if item == proj_input:
+            # bd.projects.set_current(key)
+            chosen_proj = key
+    database = bd.databases
+    db_dct = {}
+
+    for i, proj in enumerate(database):
+        db_dct[proj] = i
+
+
+    db_input = int(input(f'Select the given number for the database wished to use\n {db_dct}'))
+
+    chosen_db = ''
+    for key, item in db_dct.items():
+        if item == db_input:
+            # db = bd.Database(key)
+            chosen_db = key
+
+    print(f'The chosen project is {chosen_proj} and the chosen database is {chosen_db}')
+
+    return chosen_proj, chosen_db
+
 # Function to obtain the LCIA category to calculate the LCIA results
 def lcia_method(method):
     # Checking if the LCIA method is ReCiPe, and ignores difference between lower and upper case 
@@ -42,7 +74,7 @@ def lcia_method(method):
     return all_methods
 
 # Function to extract the flows to calculate the LCIA for
-def get_flows(project_name: str, database: str, database_type: str):
+def get_database_type_flows(project_name: str, database: str, database_type: str):
     # Setting brightway to the given project
     bd.projects.set_current(project_name)
 
@@ -54,10 +86,35 @@ def get_flows(project_name: str, database: str, database_type: str):
     for act in db:
         if database_type in act['name']:
             flows.append(act['name'])
-            flows.sort()
+    
+    flows.sort()
             
     # Returning the flows
     return flows
+
+def get_user_specific_flows(project_name: str, database: str):
+    # Setting brightway to the given project
+    bd.projects.set_current(project_name)
+
+    # Specifiyng which database to use
+    db = bd.Database(database)
+
+    chosen_flows = []
+    # Letting the user specify which flows shall be calculated
+    print("choose 'y' if you want to calculate for this flow, and 'n' if not")
+    for act in db:
+        flow = act['name']
+        user_input = input(f'Do you want to calculate for {flow}? [y/n]')
+        if 'y' in user_input.lower():
+            chosen_flows.append(flow)
+        elif 'n' in user_input.lower():
+            pass
+        else:
+            print('Choose either y or n')
+
+    chosen_flows.sort()
+
+    return chosen_flows
 
 # Setting up which databases to use depending on which project is worked in
 def database_initialization(db_type, database_name, project_name):
@@ -191,7 +248,7 @@ def LCA_initialization(project_name: str, database_name: str, flows: list, metho
                 FU.append({key: {m[1]: m[0]}})
 
     print('Initialization is completed')
-    return FU, FU_procces, impact_category, plot_x_axis #, product_details_code
+    return FU, FU_procces, impact_category, plot_x_axis
 
 def copy_process(process_code: str, eidb_consq, eidb):
     try:
@@ -326,7 +383,7 @@ def calculate_lcia(calculate, initialization, file_name, sheet_name):
     df = import_LCIA_results(file_name, flows, impact_category)
 
     # Return the dataframe with LCIA results, the LCIA categories and the names for each value on the x-axis
-    return df, impact_category, plot_x_axis_all
+    return df, impact_category, plot_x_axis_all, FU
 
 # Function to seperate the midpoint and endpoint results for ReCiPe
 def recipe_dataframe_split(df):
@@ -418,3 +475,147 @@ def unique_elements_list(database_name):
             unique_elements.append(ilst)
 
     return unique_elements
+
+# Function to recalaculate results where it can be choses which scenarios shall be recalclated
+def recalculate_lcia(redo, df, initialization, file_name, sheet_name):
+    if redo == True:
+        database_project, database_name, flows, lcia_meth, db_type = initialization
+
+        # Empty dictionary to store which scenarios shall be recalculated
+        redo_dict = {}
+
+        # Asking the user to specify which scenarios shall be recalculated
+        for idx in df.index:
+            # If the user enters y it will be recalculated and n means it will not
+            user_input = input(f'Do you want to redo the calculation for {idx}? [y/n]') # https://www.w3schools.com/python/python_user_input.asp
+            if 'y' in user_input.lower():
+                redo_dict[idx] = True
+            else:
+                redo_dict[idx] = False
+            print(f'For {idx} is it chosen {redo_dict[idx]} to redo the calculation')
+
+        # Reobtaining the functional unit to redo the calculations
+        func_unit, process, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_meth, db_type)
+
+        redo_func_unit = []
+        unique_keys = []
+
+        # Extraction the specific functional unit
+        for fu in func_unit:
+            # print(fu)
+            for key, item in fu.items():
+                # print(key, item)
+                if redo_dict[key] == True:
+                    # print(fu)
+                    redo_func_unit.append(fu)
+                    if key not in unique_keys:
+                        unique_keys.append(key)
+
+
+        impact_categories = df.columns
+        m = len(impact_categories)
+        df_copy = copy.deepcopy(df)
+
+        # Create a DataFrame to store the redone results
+        df_redo = pd.DataFrame(0, index=unique_keys, columns=impact_categories, dtype=object)  # dtype=object to handle lists
+
+        row_counter = 0
+        calc_count = 1
+
+        # Loop through each impact categories to calculate LCIA results for each process
+        for col, impact in enumerate(impact_categories):
+            # Loop through flows
+            for f in unique_keys:
+                df_lst = []  # Clear list for each flow in each impact category
+                for func_unit in range(len(redo_func_unit)):
+                    for FU_key, FU_item in redo_func_unit[func_unit].items():
+                        if f in FU_key:
+                            # Perform LCA
+                            lca = bw.LCA(FU_item, impact)
+                            lca.lci()
+                            lca.lcia()
+                            if len(process) == 1:
+                                df_lst.append([process, lca.score])
+                            else:
+                                df_lst.append([process[func_unit], lca.score])
+
+                            # Print progress
+                            print(f"Calculation {calc_count} of {m * len(redo_func_unit)}", FU_item, impact[1], lca.score)
+                            calc_count += 1
+                
+                # Assign the list of results to the DataFrame
+                df_redo.iloc[row_counter, col] = df_lst
+                # Update the row counter
+                row_counter += 1
+                
+                print(f'{impact[1]} at row {row_counter - 1} col {col} has been assigned the list {df_lst}')
+
+                
+                if row_counter == len(unique_keys):  # Reset when all flows have been processed in the column
+                    row_counter = 0
+
+        # Inserting the recalculated results
+        row_counter = 0
+        for icol, col in enumerate(impact_categories):
+            for idx, row in df_copy.iterrows():
+                if idx in df_redo.index:
+                    # print(idx, df_redo[col].loc[idx])
+                    new_val = df_redo[col].loc[idx]
+                    df_copy.iloc[row_counter, icol] = new_val
+                row_counter += 1
+                
+            
+                if row_counter == len(unique_keys):  # Reset when all flows have been processed in the column
+                    row_counter = 0
+        
+        # Saving the new dataframe
+        save_LCIA_results(df_copy, file_name, sheet_name, impact_category)
+
+        return df_copy
+    
+    else:
+        # If recalculate is not chosen it returns the same dataframe
+        return df
+
+# Function to rearrange the data in the dataframe
+def rearrange_dataframe_index(rearrange, df):
+    # Checking if rearrange is chosen
+    if rearrange == True:
+        idx_dct = {}
+        idx_lst = df.index
+
+        # Specifying the amount of placement for the index
+        plc_lst = [new_plc for new_plc in range(len(idx_lst))]
+
+        # Letting the user decide the new order of the index
+        for idx in df.index:
+            user = int(input(f'What placement shall {idx} have in the graph [{plc_lst}]'))
+            idx_dct[idx] = user
+            for i, plc in enumerate(plc_lst):
+                # removing the chosen placement
+                if user == plc:
+                    plc_lst.remove(plc)
+
+        # Creating the new index list
+        idx_lst = [''] * len(idx_dct)
+        for key, item in idx_dct.items():
+            idx_lst[item] = key
+
+        impact_category = df.columns
+        df_rearranged = pd.DataFrame(0, index=idx_lst, columns=impact_category, dtype=object)
+
+        row_counter = 0
+
+        # Arranging the dataframe to the new dataframe
+        for icol, col in enumerate(impact_category):
+            for idx, row in df_rearranged.iterrows():
+                rearranged_val = df.at[idx, col] # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.at.html#pandas.DataFrame.at
+                df_rearranged.iloc[row_counter, icol] = rearranged_val
+                row_counter += 1
+                
+                if row_counter == len(idx_dct):  # Reset when all flows have been processed in the column
+                    row_counter = 0
+        return df_rearranged
+    else:
+        # If rearrnge is not chosen it returns the same dataframe as inputtet
+        return df
