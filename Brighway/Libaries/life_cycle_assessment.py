@@ -18,19 +18,21 @@ def select_project_and_database():
     for i, proj in enumerate(projects):
         proj_dct[proj[0]] = i
 
-    proj_input = int(input(f'Select the given number for the database wished to use\n {proj_dct}'))
+    proj_input = int(input(f'Select the given number for the project wished to use\n {proj_dct}'))
 
     chosen_proj = ''
     for key, item in proj_dct.items():
         if item == proj_input:
             # bd.projects.set_current(key)
             chosen_proj = key
+
+    bd.projects.set_current(chosen_proj)
+
     database = bd.databases
     db_dct = {}
 
     for i, proj in enumerate(database):
         db_dct[proj] = i
-
 
     db_input = int(input(f'Select the given number for the database wished to use\n {db_dct}'))
 
@@ -125,7 +127,7 @@ def database_initialization(db_type, database_name, project_name):
         pass
     else:
         bi.bw2setup()
-    
+
     eidb = bd.Database(database_name)
     
     if 'CONSQ' in db_type and 'sterilization' in project_name:
