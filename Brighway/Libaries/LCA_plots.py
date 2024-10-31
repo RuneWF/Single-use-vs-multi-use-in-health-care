@@ -461,94 +461,58 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     return df_stack_updated
 
 def break_even_graph(df_stacked, inputs, amount_of_uses):
+    # Unpack inputs
+    colors, save_dir, db_type = inputs[1], inputs[2], inputs[3]
 
-    colors = inputs[1]
-    save_dir = inputs[2]
-    db_type = inputs[3]
+    # Split index into small and large based on criteria
+    small_idx = [idx for idx in df_stacked.index if '2' in idx or 'AS' in idx]
+    large_idx = [idx for idx in df_stacked.index if idx not in small_idx]
 
-    dfs_idx = [idx for idx in df_stacked.index] 
+    # Create empty DataFrames for each scenario
+    scenarios = {
+        'small': pd.DataFrame(0, index=small_idx, columns=df_stacked.columns, dtype=object),
+        'large': pd.DataFrame(0, index=large_idx, columns=df_stacked.columns, dtype=object)
+    }
 
-    small_idx = []
-    large_idx = []
+    # Fill scenarios with data
+    for scenario_name, scenario_df in scenarios.items():
+        scenario_df.update(df_stacked.loc[scenario_df.index])
 
-    for idx in dfs_idx:
-        if '2' in idx or 'AS' in idx:
-            small_idx.append(idx)
-        else:
-            large_idx.append(idx)
+        alu_box_use, production = {}, {}
 
-
-    df_small = pd.DataFrame(0, index=small_idx, columns=df_stacked.columns, dtype=object)
-    df_large = pd.DataFrame(0, index=large_idx, columns=df_stacked.columns, dtype=object)
-
-    scenario = [[df_small, 'small'], [df_large, 'large']]
-    for box in scenario:
-        sc = box[0]
-        sc_str = box[1]
-        for col in df_stacked.columns:
-            for idx, row in sc.iterrows():
-                # print(idx, row[col], df_stacked.at[idx, col])
-                row[col] = df_stacked.at[idx, col]
-
-        alu_box_use = {}
-        production = {}
-
-        for idx, row in sc.iterrows(): 
-            use = 0
-            prod = 0
+        for idx, row in scenario_df.iterrows(): 
+            use, prod = 0, 0
             for col in df_stacked.columns:
                 if ('Autoclave' in col or 'Box cleaning' in col) and 'H' not in idx:
-                    alu_box_use[idx] = (row[col] + use)
+                    alu_box_use[idx] = row[col] + use
                     use += row[col]
-                    # print(idx, col, row[col])
                 elif 'A' in idx:
                     production[idx] = (row[col] + prod) * amount_of_uses
                     prod += row[col]
-                    # print(row[col])
                 else:
-                    production[idx] = (row[col] + prod)
+                    production[idx] = row[col] + prod
                     prod += row[col]
-                    # print(row[col])
-        
+
+        # Calculate break-even values
         be_dct = {}
+        for key, usage in production.items():
+            be_dct[key] = [usage if u == 1 else alu_box_use.get(key, usage) * u + usage
+                           for u in range(1, amount_of_uses + 1)]
 
-        for key, item in production.items():
-            usage = item
-            # print(key, item)
-            be_dct[key] = []
-            for u in range(1, amount_of_uses+1):
-                if u == 1:
-                    be_dct[key].append(usage)
-                    u1 = usage
-                elif key in alu_box_use.keys():
-                    # print(key, alu_box_use[key])
-                    be_dct[key].append(alu_box_use[key] * u + u1)          
-                else:
-                    be_dct[key].append(usage * u)  
-
-
-
+        # Plot results
         fig, ax = plt.subplots(figsize=(10, 6))
-        color_idx = 0
-        # Plot each list
-        for key, value in be_dct.items():
-            ax.plot(value, label=key, color = colors[color_idx], markersize = 2.5)
-            color_idx += 1
+        for color_idx, (key, value) in enumerate(be_dct.items()):
+            ax.plot(value, label=key, color=colors[color_idx % len(colors)], markersize=2.5)
 
-        # Add legend
-        ax.legend(labels=be_dct.keys(), bbox_to_anchor=(1.00, 1.017), loc='upper left')
-
-
-        # Add titles and labels
-        plt.title(f'Break even for the {sc_str} container')
+        # Customize plot
+        ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
+        plt.title(f'Break even for the {scenario_name} container')
         plt.xlabel('Usage')
         plt.ylabel('Global Warming Potential [kg CO$_2$e]')
-
-        plt.xlim(0,513)
-        # plt.ylim(0,190)
-        # plt.yticks(np.arange(0, 190, step=20))
-        plt.xticks(np.arange(0, amount_of_uses, step=50))
-
+        plt.xlim(0, 513)
+        plt.xticks(range(0, amount_of_uses, 50))
         plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f'break_even_{sc_str}_{db_type}.jpg'), bbox_inches='tight')
+
+        # Save and display plot
+        plt.savefig(os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.jpg'), bbox_inches='tight')
         plt.show()

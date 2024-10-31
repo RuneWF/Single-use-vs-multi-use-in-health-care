@@ -278,7 +278,7 @@ def copy_process(process_code: str, eidb_consq, eidb):
     return None
 
 # Function to perform the LCIA calculations
-def life_cycle_impact_assessment(flows, functional_unit, impact_categories, process):
+# def life_cycle_impact_assessment(flows, functional_unit, impact_categories, process):
     print()
     print('Calculating the LCA results:')
 
@@ -329,6 +329,48 @@ def life_cycle_impact_assessment(flows, functional_unit, impact_categories, proc
     
     # Returning the dataframe
     return df
+
+def life_cycle_impact_assessment(flows, functional_unit, impact_categories, process):
+    print('\nCalculating the LCA results:')
+
+    # Ensure impact categories is a list
+    impact_categories = list(impact_categories) if isinstance(impact_categories, tuple) else impact_categories
+
+    # Create a DataFrame to store results
+    df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
+
+    calc_count = 1
+    total_calculations = len(impact_categories) * len(functional_unit)
+
+    # Loop through each impact category and flow
+    for col, impact in enumerate(impact_categories):
+        for row_idx, f in enumerate(flows):
+            df_lst = []
+            
+            # Find matches in functional units and calculate LCA
+            for func_unit, func_dict in enumerate(functional_unit):
+                for FU_key, FU_item in func_dict.items():
+                    if f in FU_key:
+                        # Perform LCA
+                        lca = bw.LCA(FU_item, impact)
+                        lca.lci()
+                        lca.lcia()
+                        
+                        # Append result to list
+                        df_lst.append([process[func_unit] if len(process) > 1 else process, lca.score])
+
+                        # Print progress
+                        print(f"Calculation {calc_count} of {total_calculations}: {FU_item}, {impact[1]}, Score: {lca.score}")
+                        calc_count += 1
+
+            # Assign list to DataFrame cell
+            df.iat[row_idx, col] = df_lst
+            print(f'{impact[1]} at row {row_idx} col {col} has been assigned the list {df_lst}')
+    
+    return df
+
+
+
 
 # saving the LCIA results to excel
 def save_LCIA_results(df, file_name, sheet_name, impact_category):
