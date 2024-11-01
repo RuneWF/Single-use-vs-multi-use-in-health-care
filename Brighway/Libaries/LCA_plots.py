@@ -61,7 +61,7 @@ def flow_name_update(x, gwp, db_type, database_name):
         if 'transport' in x:
             x = 'Transport'
         if 'cabinet' in x or 'wipe' in x:
-            x = 'Box cleaning'
+            x = 'Container cleaning'
         if 'polysulfone' in x:
             x = 'Manufacturing'
 
@@ -329,7 +329,7 @@ def category_organization(database_name):
     if 'Ananas consq' in database_name or 'sterilization' in database_name:
         category_mapping = {
         "Raw mat. + prod.": ["Raw mat.", "Manufacturing", "Packaging"],
-        "Use": ["Autoclave", "Box cleaning"],
+        "Use": ["Autoclave", "Container cleaning"],
         "Transport": ["Transport"],
         "EoL": ["Incineration", "Recycling", "Avoided mat. prod.", "Avoided energy prod."],
         "Total": ["Total"]
@@ -442,7 +442,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.append(plt.Line2D([0], [0], marker='x', color='w', markerfacecolor='k', markersize=7, label='Total'))
+    handles.append(plt.Line2D([0], [0], marker='X', color='w', markerfacecolor='k', markersize=6, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
 
 
@@ -450,7 +450,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     # Setting labels and title
     plt.title(f'GWP impact for each life stage for 1 FU - {db_type}', weight='bold')
     plt.ylabel('Global Warming Potential [kg CO$_2$e]', weight='bold')
-    plt.yticks(np.arange(y_min, y_max, step=steps))
+    plt.yticks(np.arange(y_min, y_max + 0.01, step=steps))
     plt.ylim(y_min-0.05, y_max+0.05)
     
     plt.xticks(rotation=0)
@@ -501,8 +501,22 @@ def break_even_graph(df_stacked, inputs, amount_of_uses):
 
         # Plot results
         fig, ax = plt.subplots(figsize=(10, 6))
+
+        
+
         for color_idx, (key, value) in enumerate(be_dct.items()):
-            ax.plot(value, label=key, color=colors[color_idx % len(colors)], markersize=2.5)
+            if color_idx == 0:
+                if 'H' in key:
+                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx % len(colors)], markersize=3.5)
+                else:
+                    ax.plot(value, label=key, color=colors[color_idx % len(colors)], markersize=3.5)
+            else:
+                if 'H' in key:
+                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx + 2], markersize=3.5)
+                else:
+                    ax.plot(value, label=key, color=colors[color_idx + 2], markersize=3.5)
+            
+
 
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')

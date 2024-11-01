@@ -663,3 +663,104 @@ def rearrange_dataframe_index(rearrange, df):
     else:
         # If rearrnge is not chosen it returns the same dataframe as inputtet
         return df
+
+def quic_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name):
+    df_unique = pd.DataFrame(0, index=unique_process_index, columns=impact_categories, dtype=object)
+    unique_process_results = {}
+    calc_count = 1
+    total_calculations = len(uniquie_process_dct)*len(impact_categories)
+    for col, impact in enumerate(impact_categories):
+        unique_process_results[impact] = []
+        print(f'Calculating the results for {impact[1]}')
+        for row_idx, (key, item) in enumerate(uniquie_process_dct.items()):
+            # Perform LCA
+            lca = bw.LCA({key :item}, impact)
+            lca.lci()
+            lca.lcia()
+            unique_process_results[impact].append({key: lca.score})
+
+
+            # Print progress
+            print(f"Calculation {calc_count}/{total_calculations}: {key},  Score: {lca.score} at col {col}, row {row_idx}")
+            calc_count += 1
+
+            # # Assign list to DataFrame cell
+            df_unique.iat[row_idx, col] = lca.score
+
+
+    # Specifying the file name and sheet name
+    save_LCIA_results(df_unique, file_name_unique, sheet_name, impact_categories)
+
+def quick_LCIA(initialization, file_name_unique, sheet_name):
+    database_project, database_name, flows, lcia_method, db_type = initialization
+    functional_unit, process, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
+
+
+    # Ensure impact categories is a list
+    impact_categories = list(impact_category) if isinstance(impact_category, tuple) else impact_category
+
+
+    # Loop through each impact category and flow
+    
+    unique_process_index = []
+    uniquie_process = []
+
+    for f in flows:    
+        # Find matches in functional units and calculate LCA
+        for func_dict in functional_unit:
+            for FU_key, FU_item in func_dict.items():
+                if f in FU_key:
+                    for proc in FU_item.keys():
+                        if f'{proc}' not in unique_process_index:
+                            unique_process_index.append(f'{proc}')
+                            uniquie_process.append(proc)
+
+    unique_process_index.sort()
+
+    uniquie_process_dct = {}
+
+    for upi in unique_process_index:
+        for proc in uniquie_process:
+            if upi == f'{proc}':
+                uniquie_process_dct[proc] = 1
+
+    # Check if file exists
+    if os.path.isfile(file_name_unique): # https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-without-exceptions
+        # Import LCIA results
+        df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
+        
+        # Get and sort index
+        df_unq_idx = sorted(df_unique.index)
+        
+        # Find new indices
+        new_idx = [idx for i, idx in enumerate(df_unq_idx) if idx != unique_process_index[i]]
+        
+        # Output results
+        if new_idx:
+            for idx in new_idx:
+                print(f'{idx} does not exist in the unique process')
+        else:
+            print('No new entries found')
+
+        
+    else:
+        quic_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
+
+    df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
+
+    df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
+    for col in impact_categories:
+        for i, row in df.iterrows():
+            row[col] = []
+
+    for col, impact in enumerate(impact_category):
+        for fu in functional_unit:
+            for key, item in fu.items():
+                proc = str([p for p in item.keys()][0])
+                val = float([v for v in item.values()][0])
+                factor = df_unique.at[proc, impact]
+                impact_value = val * factor
+                # print(key, proc, val, factor, impact_value, val*factor == impact_value)
+                df.at[key, impact].append([proc, impact_value])
+
+    return df, plot_x_axis_all, impact_categories
