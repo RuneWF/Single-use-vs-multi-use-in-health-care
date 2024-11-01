@@ -344,7 +344,7 @@ def category_organization(database_name):
         "Total": ["Total"]
         }
 
-    return categories, category_mapping
+    return categories, category_mapping        
 
 # Function to plot the global warming potentials showing the contribution of each life stage
 def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
@@ -391,7 +391,6 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
             x_axis.append(lst_x)
             GWP_value.append(lst_GWP)
 
-
     # Create an empty dictionary to collect the data
     key_dic = {}
 
@@ -420,19 +419,22 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
         for inx, row in df_stack_updated.iterrows():
             row[col] = df_stacked[col][inx]
 
+    
 
     # Plotting the stacked bar chart
     ax = df_stack_updated.plot(kind='bar', stacked=True, figsize=(10, 6), color=colors)
 
     # Plotting 'Total' values as dots and including it in the legend
     for flow in flow_legend:
-        # print(flow)
         for idx, row in totals_df.iterrows():
-            # print( row['Category'][0])
             if flow in row['Category'][0]:
                 unit = row['Category'][0]
                 total = row['Value']
-                ax.plot(unit, total, 'x', color='k', markersize=5, label='Total' if idx == 0 else "")
+                ax.plot(unit, total - 0.02, '^', color='k', markersize=7, label='Total' if idx == 0 else "")
+                # Add the data value
+                ax.text(unit, total - 0.14, f'{round(total,2)}', ha='center', va='bottom', fontsize=9)
+
+                # addlabels(unit,total)
 
     y_min = y_axis_values[0]
     y_max = y_axis_values[1]
@@ -442,7 +444,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.append(plt.Line2D([0], [0], marker='X', color='w', markerfacecolor='k', markersize=6, label='Total'))
+    handles.append(plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=8, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
 
 
