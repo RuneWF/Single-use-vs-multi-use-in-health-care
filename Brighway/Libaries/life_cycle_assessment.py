@@ -278,7 +278,7 @@ def copy_process(process_code: str, eidb_consq, eidb):
     return None
 
 # Function to perform the LCIA calculations
-# def life_cycle_impact_assessment(flows, functional_unit, impact_categories, process):
+def life_cycle_impact_assessment(flows, functional_unit, impact_categories, process):
     print()
     print('Calculating the LCA results:')
 
@@ -368,9 +368,6 @@ def life_cycle_impact_assessment(flows, functional_unit, impact_categories, proc
             print(f'{impact[1]} at row {row_idx} col {col} has been assigned the list {df_lst}')
     
     return df
-
-
-
 
 # saving the LCIA results to excel
 def save_LCIA_results(df, file_name, sheet_name, impact_category):
