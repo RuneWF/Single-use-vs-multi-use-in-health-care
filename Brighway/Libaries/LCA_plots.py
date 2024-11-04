@@ -51,8 +51,10 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Avoided mat. prod.'
             else:
                 x = 'Raw mat.'
-        if 'no Energy Recovery' in x or 'plastic incineration' in x:
+        if 'no Energy Recovery' in x or 'incineration' in x:
+            print(x_og)
             x = 'Incineration'
+
         if 'board box' in x or 'packaging film' in x:
             x = 'Packaging'
 
@@ -423,18 +425,17 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
     # Plotting the stacked bar chart
     ax = df_stack_updated.plot(kind='bar', stacked=True, figsize=(10, 6), color=colors)
-
+    ax.axhline(y = -0.004, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
+     
     # Plotting 'Total' values as dots and including it in the legend
     for flow in flow_legend:
         for idx, row in totals_df.iterrows():
             if flow in row['Category'][0]:
                 unit = row['Category'][0]
                 total = row['Value']
-                ax.plot(unit, total - 0.02, '^', color='k', markersize=7, label='Total' if idx == 0 else "")
+                ax.plot(unit, total, 'D', color='k', markersize=5, label='Total' if idx == 0 else "")
                 # Add the data value
-                ax.text(unit, total - 0.14, f'{round(total,2)}', ha='center', va='bottom', fontsize=9)
-
-                # addlabels(unit,total)
+                ax.text(unit, total - 0.12, f"{total:.2f}", ha='center', va='bottom', fontsize=9) # https://www.datacamp.com/tutorial/python-round-to-two-decimal-places?utm_source=google&utm_medium=paid_search&utm_campaignid=19589720824&utm_adgroupid=157156376311&utm_device=c&utm_keyword=&utm_matchtype=&utm_network=g&utm_adpostion=&utm_creative=684592140434&utm_targetid=dsa-2218886984100&utm_loc_interest_ms=&utm_loc_physical_ms=9197406&utm_content=&utm_campaign=230119_1-sea~dsa~tofu_2-b2c_3-row-p2_4-prc_5-na_6-na_7-le_8-pdsh-go_9-nb-e_10-na_11-na-oct24&gad_source=1&gclid=Cj0KCQiA_qG5BhDTARIsAA0UHSK7fmd8scMcHSkG_VMO1TWmeHapAM6cjV1QobZKKYotZPX7IcmJRF4aAhsyEALw_wcB
 
     y_min = y_axis_values[0]
     y_max = y_axis_values[1]
@@ -444,7 +445,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.append(plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=8, label='Total'))
+    handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor='k', markersize=6, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
 
 

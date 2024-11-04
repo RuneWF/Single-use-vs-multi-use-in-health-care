@@ -681,7 +681,7 @@ def quic_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categ
 
 
             # Print progress
-            print(f"Calculation {calc_count}/{total_calculations}: {key},  Score: {lca.score} at col {col}, row {row_idx}")
+            print(f"Calculation {calc_count}/{total_calculations}: {key},  Score: {lca.score} for col {col}, row {row_idx}")
             calc_count += 1
 
             # # Assign list to DataFrame cell
@@ -724,27 +724,27 @@ def quick_LCIA(initialization, file_name_unique, sheet_name):
             if upi == f'{proc}':
                 uniquie_process_dct[proc] = 1
 
-    # Check if file exists
-    if os.path.isfile(file_name_unique): # https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-without-exceptions
-        # Import LCIA results
-        df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
+    # # Check if file exists
+    # if os.path.isfile(file_name_unique): # https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-without-exceptions
+    #     # Import LCIA results
+    #     df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
         
-        # Get and sort index
-        df_unq_idx = sorted(df_unique.index)
+    #     # Get and sort index
+    #     df_unq_idx = sorted(df_unique.index)
         
-        # Find new indices
-        new_idx = [idx for i, idx in enumerate(df_unq_idx) if idx != unique_process_index[i]]
+    #     # Find new indices
+    #     new_idx = [idx for i, idx in enumerate(df_unq_idx) if idx != unique_process_index[i]]
         
-        # Output results
-        if new_idx:
-            for idx in new_idx:
-                print(f'{idx} does not exist in the unique process')
-        else:
-            print('No new entries found')
+    #     # Output results
+    #     if new_idx:
+    #         for idx in new_idx:
+    #             print(f'{idx} does not exist in the unique process')
+    #     else:
+    #         print('No new entries found')
 
         
-    else:
-        quic_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
+    # else:
+    quic_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
 
     df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
 
