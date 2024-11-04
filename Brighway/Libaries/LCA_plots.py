@@ -52,7 +52,6 @@ def flow_name_update(x, gwp, db_type, database_name):
             else:
                 x = 'Raw mat.'
         if 'no Energy Recovery' in x or 'incineration' in x:
-            print(x_og)
             x = 'Incineration'
 
         if 'board box' in x or 'packaging film' in x:
@@ -385,8 +384,6 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
                 lst_GWP.append(gwp)
                 gwp_tot += gwp
             
-            print(f'Total for {i} = {gwp_tot} kg CO2e')
-
             # Setting the updated list back into a new nested list
             lst_GWP.append(gwp_tot)
             lst_x.append('Total')
