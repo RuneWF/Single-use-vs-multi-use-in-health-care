@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def plot_colors(list_length, color):
+def plot_colors(uniqie_elements, color):
     cmap = plt.get_cmap(color)
-    colors = [cmap(i) for i in np.linspace(0, 1, len(list_length))]
+    colors = [cmap(i) for i in np.linspace(0, 1, len(uniqie_elements))]
     return colors
 
 # https://scales.arabpsychology.com/stats/how-do-you-swap-two-rows-in-pandas/
