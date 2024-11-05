@@ -766,16 +766,21 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
 
     for col, impact in enumerate(impact_category):
         for fu in functional_unit:
+            tot = 0
             for key, item in fu.items():
                 proc = str([p for p in item.keys()][0])
                 val = float([v for v in item.values()][0])
                 factor = df_unique_new.at[proc, impact]
                 impact_value = val * factor
+                
                 # print(key, proc, val, factor, impact_value, val*factor == impact_value)
                 df.at[key, impact].append([proc, impact_value])
+        #     tot += impact_value
+        # print(f'{key} total = {tot} for {impact[1]}')
+
 
     save_LCIA_results(df, file_name, sheet_name, impact_categories)
 
-    return df, plot_x_axis_all, impact_categories
+    return df, plot_x_axis_all, impact_categories, df_unique_new
 
 
