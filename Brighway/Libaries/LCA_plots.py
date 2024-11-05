@@ -532,8 +532,8 @@ def break_even_graph(df_stacked, inputs, plot_structure):
         plt.xlim(0, amount_of_uses)
         plt.xticks(range(0, amount_of_uses, xstep))
 
-        plt.ylim(0, y_max[sc_idx])
-        plt.yticks(range(0, y_max[sc_idx] + 20, ystep[sc_idx]))
+        plt.ylim(0, y_max[sc_idx]+ 10)
+        plt.yticks(range(0, y_max[sc_idx] + 1, ystep[sc_idx]))
         plt.tight_layout()
 
         # Save and display plot
