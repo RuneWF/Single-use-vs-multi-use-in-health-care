@@ -117,7 +117,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
 
     # Setting labels and title
-    ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]}',weight='bold',fontsize=16)
+    ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=16)
     ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
     ax.set_xticklabels(plot_x_axis,  weight='bold', fontsize=12)
 
@@ -460,9 +460,10 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
     return df_stack_updated
 
-def break_even_graph(df_stacked, inputs, amount_of_uses):
+def break_even_graph(df_stacked, inputs, plot_structure):
     # Unpack inputs
     colors, save_dir, db_type = inputs[1], inputs[2], inputs[3]
+    amount_of_uses, y_max, ystep, xstep, break_even_product, color_idx = plot_structure
 
     # Split index into small and large based on criteria
     small_idx = [idx for idx in df_stacked.index if '2' in idx or 'AS' in idx]
@@ -475,7 +476,7 @@ def break_even_graph(df_stacked, inputs, amount_of_uses):
     }
 
     # Fill scenarios with data
-    for scenario_name, scenario_df in scenarios.items():
+    for sc_idx, (scenario_name, scenario_df) in enumerate(scenarios.items()):
         scenario_df.update(df_stacked.loc[scenario_df.index])
 
         alu_box_use, production = {}, {}
@@ -504,27 +505,35 @@ def break_even_graph(df_stacked, inputs, amount_of_uses):
 
         
 
-        for color_idx, (key, value) in enumerate(be_dct.items()):
-            if color_idx == 0:
+        for idx, (key, value) in enumerate(be_dct.items()):
+            # if color_idx == 0:
+            try:
                 if 'H' in key:
-                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx % len(colors)], markersize=3.5)
+                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], markersize=3.5)
                 else:
-                    ax.plot(value, label=key, color=colors[color_idx % len(colors)], markersize=3.5)
-            else:
-                if 'H' in key:
-                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx + 2], markersize=3.5)
-                else:
-                    ax.plot(value, label=key, color=colors[color_idx + 2], markersize=3.5)
+                    ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
+            except IndexError:
+                print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')
+            # else:
+            #     if 'H' in key:
+            #         ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx + 2], markersize=3.5)
+            #     else:
+            #         ax.plot(value, label=key, color=colors[color_idx + 2], markersize=3.5)
             
+        #ax.axhline(y = 0, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
 
+        
 
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-        plt.title(f'Break even for the {scenario_name} container')
-        plt.xlabel('Usage')
-        plt.ylabel('Global Warming Potential [kg CO$_2$e]')
-        plt.xlim(0, 513)
-        plt.xticks(range(0, amount_of_uses, 50))
+        plt.title(f'Break even for the {scenario_name} {break_even_product} - {db_type}', weight = 'bold')
+        plt.xlabel('Cleaning operation(s)',  weight = 'bold')
+        plt.ylabel('Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
+        plt.xlim(0, amount_of_uses)
+        plt.xticks(range(0, amount_of_uses, xstep))
+
+        plt.ylim(0, y_max[sc_idx])
+        plt.yticks(range(0, y_max[sc_idx] + 20, ystep[sc_idx]))
         plt.tight_layout()
 
         # Save and display plot
