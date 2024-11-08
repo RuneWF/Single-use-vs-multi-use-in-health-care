@@ -722,15 +722,15 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     unique_process_index = []
     uniquie_process = []
 
-    for f in flows:    
+    # for f in flows:    
         # Find matches in functional units and calculate LCA
-        for func_dict in functional_unit:
-            for FU_key, FU_item in func_dict.items():
-                if f in FU_key:
-                    for proc in FU_item.keys():
-                        if f'{proc}' not in unique_process_index:
-                            unique_process_index.append(f'{proc}')
-                            uniquie_process.append(proc)
+    for func_dict in functional_unit:
+        for FU_key, FU_item in func_dict.items():
+            # if f in FU_key:
+            for proc in FU_item.keys():
+                if f'{proc}' not in unique_process_index:
+                    unique_process_index.append(f'{proc}')
+                    uniquie_process.append(proc)
 
     unique_process_index.sort()
 
@@ -741,15 +741,17 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
             if upi == f'{proc}':
                 uniquie_process_dct[proc] = 1
 
+    user_input = ''
+
     # Check if file exists
     if os.path.isfile(file_name_unique): # https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-without-exceptions
         # Import LCIA results
         try:
             df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
-            user_input1 = input("Do you want to redo the calculations for some process (select 'a' if you want to redo eveything)? [y/n]")
-            if 'y' in user_input1.lower():
+            user_input = input("Do you want to redo the calculations for some process (select 'a' if you want to redo eveything)? [y/n]")
+            if 'y' in user_input.lower():
                 df_unique_new = redo_LCIA_unique_process(df_unique, initialization, unique_process_index, file_name_unique, sheet_name)
-            elif 'a' in user_input1.lower():
+            elif 'a' in user_input.lower():
                 quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
 
         except ValueError: # Recalculating everything if the saved dataframe does not have the same amount of process as the now
@@ -757,30 +759,30 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     else:
         quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
 
-    df_unique_new = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
+    if 'a' in user_input.lower() or 'y' in user_input.lower():
+        df_unique_new = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
 
-    df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
-    for col in impact_categories:
-        for i, row in df.iterrows():
-            row[col] = []
+        df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
 
-    for col, impact in enumerate(impact_category):
-        for fu in functional_unit:
-            tot = 0
-            for key, item in fu.items():
-                proc = str([p for p in item.keys()][0])
-                val = float([v for v in item.values()][0])
-                factor = df_unique_new.at[proc, impact]
-                impact_value = val * factor
-                
-                # print(key, proc, val, factor, impact_value, val*factor == impact_value)
-                df.at[key, impact].append([proc, impact_value])
-        #     tot += impact_value
-        # print(f'{key} total = {tot} for {impact[1]}')
+        for col in impact_categories:
+            for i, row in df.iterrows():
+                row[col] = []
 
+        for col, impact in enumerate(impact_category):
+            for fu in functional_unit:
+                for key, item in fu.items():
+                    proc = str([p for p in item.keys()][0])
+                    val = float([v for v in item.values()][0])
+                    factor = df_unique_new.at[proc, impact]
+                    impact_value = val * factor
+                    
+                    # print(key, proc, val, factor, impact_value, val*factor == impact_value)
+                    df.at[key, impact].append([proc, impact_value])
+        save_LCIA_results(df, file_name, sheet_name, impact_categories)
 
-    save_LCIA_results(df, file_name, sheet_name, impact_categories)
+    
+    df = import_LCIA_results(file_name, flows, impact_category)
 
-    return df, plot_x_axis_all, impact_categories, df_unique_new
+    return df, plot_x_axis_all, impact_categories, functional_unit
 
 

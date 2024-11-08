@@ -490,6 +490,7 @@ def break_even_graph(df_stacked, inputs, plot_structure):
                 elif 'A' in idx:
                     production[idx] = (row[col] + prod) * amount_of_uses
                     prod += row[col]
+                    
                 else:
                     production[idx] = row[col] + prod
                     prod += row[col]

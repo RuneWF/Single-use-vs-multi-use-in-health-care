@@ -12,6 +12,10 @@ def box_plot(path, inputs, plot_structure):
     box_plot_df = pd.read_excel(path)
     df_bp = ((box_plot_df['Use pr day']).dropna()).to_frame()
 
+    for col in df_bp.columns:
+        for i, row in df_bp.iterrows():
+            row[col] *= 365*10
+
     # Update font size
     plt.rcParams.update({'font.size': 10})
 
