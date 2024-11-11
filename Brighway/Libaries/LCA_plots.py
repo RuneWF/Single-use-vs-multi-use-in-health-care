@@ -5,6 +5,7 @@ from collections import OrderedDict
 from matplotlib.lines import Line2D  # Import for creating custom legend markers
 import importlib
 import os
+from copy import deepcopy as dc
 
 from  standards import *
 import life_cycle_assessment as lc
@@ -65,6 +66,7 @@ def flow_name_update(x, gwp, db_type, database_name):
         if 'polysulfone' in x:
             x = 'Manufacturing'
 
+
     elif 'Lobster' in database_name:
             if 'sc1' in x:
                 x = x.replace(f'sc1 ', '')
@@ -90,6 +92,66 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Remanufacturing'
 
     return x, gwp
+
+def break_even_flow_seperation(x, gwp, db_type, database_name):
+    # print(x, gwp, database_name)
+    if 'Ananas consq' in database_name or 'sterilization' in database_name:
+        if f'- {db_type}' in x:
+            #print(key)
+            x = x.replace(f' - {db_type}', '')
+        x_og = x
+
+        if 'cabinet' in x or 'wipe' in x:
+            x = 'Container cleaning'
+
+        if 'alubox' in x:       
+            x = x.replace('alubox ', '')
+            if 'avoided' in x:
+                x = 'Avoided mat. prod.'
+                if gwp < 0:
+                    gwp = -gwp
+            if 'raw materials' in x:
+                x = 'Raw mat.' 
+                if gwp < 0:
+                    gwp = -gwp 
+            if 'production' in x:
+                x = 'Manufacturing' 
+            if 'EoL' in x:
+                x = 'Recycling'
+        if 'waste paper to pulp' in x:
+            x = 'Avoided mat. prod.'
+        if 'sheet manufacturing' in x:
+            x = 'Manufacturing'
+        if 'electricity' in x:
+            x = 'Avoided energy prod.'
+        if 'heating' in x:
+            x = 'Avoided energy prod.'
+        if 'market for polypropylene' in x:
+            if gwp < 0:
+                x = 'Avoided mat. prod.'
+            else:
+                x = 'Raw mat.'
+        if 'PE granulate' in x:
+            if gwp < 0:
+                x = 'Avoided mat. prod.'
+            else:
+                x = 'Raw mat.'
+       
+        if 'no Energy Recovery' in x or 'incineration' in x:
+            x = 'Incineration'
+
+        if 'board box' in x or 'packaging film' in x:
+            x = 'Packaging'
+
+        if 'autoclave' in x:
+            x = 'Autoclave'
+        if 'transport' in x:
+            x = 'Transport'
+        if 'polysulfone' in x:
+            x = 'Manufacturing'
+
+    return x, gwp
+
 
 # Function to create the scaled FU plot
 def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
@@ -167,17 +229,11 @@ def single_score_plot(directory, df_tot, inputs):
     plt.savefig(os.path.join(save_dir, f'scaled_single_score_multi_{db_type}.jpg'), bbox_inches='tight')
     plt.show()
 
-def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
-    import os
-    
-    flow_legend = inputs[0]
-    colors = inputs[1]
-    save_dir = inputs[2]
-    db_type = inputs[3]
-    database_name = inputs[4]
-
+def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns):
     x_axis = []
     GWP_value = []
+
+    
 
     for col in df_GWP.columns:
         for i, row in df_GWP.iterrows():
@@ -187,57 +243,81 @@ def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
             for lst in row[col]:
                 x = lst[0]
                 gwp = lst[1]
-                # print(lst)
-                #print(gwp,x)
+                if 'break even' in case.lower():
+                    x, gwp = break_even_flow_seperation(x, gwp, db_type, database_name)
+                else:
+                    x, gwp = flow_name_update(x, gwp, db_type, database_name)
 
-                x = flow_name_update(x, gwp, db_type, database_name)
-
+                # Updating the name of process
+                if 'Avoided mat. prod.' in x and gwp > 0:
+                    gwp = -gwp
                 lst_x.append(x)
                 lst_GWP.append(gwp)
                 gwp_tot += gwp
-                # print(x, gwp)
+
+
             # print(gwp_tot, lst_GWP)
             lst_GWP.append(gwp_tot)
             lst_x.append('Total')
             x_axis.append(lst_x)
             GWP_value.append(lst_GWP)
 
-    # Ensure the legend displays items in the category order
-    ordered_legend = {key: [] for key in category_mapping}
 
-    for x_lst in range(len(x_axis)):
-        for x in range(len(x_axis[x_lst])):
-            
-            for key, item in category_mapping.items():
-                    # print(x_axis[x_lst][x], item, x_axis[x_lst][x] in item)
-                    if x_axis[x_lst][x] in item:
-                        # print(x_axis[x_lst][x], item, x_lst, x)
-                        ordered_legend[key].append(x_axis[x_lst][x])
 
-    plot_legend = {key: [] for key in category_mapping}
-    temp = []
+    # Create an empty dictionary to collect the data
+    key_dic = {}
 
-    for key,value in ordered_legend.items():
-        #print(key, value)
-        for val in value:
-            if val not in temp:
-                temp.append(val)
-                # print(val)
-                plot_legend[key].append(val)
+    # Collect the data into the dictionary
+    for i, p in enumerate(GWP_value):
+        for a, b in enumerate(p):
+            key = (flow_legend[i], x_axis[i][a])
+            if key in key_dic:
+                key_dic[key] += b
+            else:
+                key_dic[key] = b
+
+    # Convert the dictionary into a DataFrame
+    df = pd.DataFrame(list(key_dic.items()), columns=['Category', 'Value'])
+
+    # Separate 'Total' values from the rest
+    totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Total']
+    df = df[df['Category'].apply(lambda x: x[1]) != 'Total']
+
+    # Pivot the DataFrame to have a stacked format
+    df_stacked = df.pivot_table(index=[df['Category'].apply(lambda x: x[0])], columns=[df['Category'].apply(lambda x: x[1])], values='Value', aggfunc='sum').fillna(0)
+
+    # Create a DataFrame to store results
+    df_stack_updated = pd.DataFrame(0, index=flow_legend, columns=columns[:-1], dtype=object)  # dtype=object to handle lists
+    for col in df_stack_updated.columns:
+        for inx, row in df_stack_updated.iterrows():
+            row[col] = df_stacked[col][inx]
+                
+
+    return df_stack_updated, totals_df
+
+def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
+    import os
+    
+    flow_legend = inputs[0]
+    colors = inputs[1]
+    save_dir = inputs[2]
+    db_type = inputs[3]
+    database_name = inputs[4]
+
+    x_axis, GWP_value, plot_legend = process_categorizing(df_GWP, db_type, database_name, category_mapping, '')
 
     color_map = {}
     #unique_processes = {process for sublist in x_axis for process in sublist}
-    for i, process in enumerate(temp):
+    for i, process in enumerate(plot_legend):
         color_map[process] = colors[i]
         #print(process, i)
-
 
 
     # Initialize an ordered dictionary for legend_handles to maintain the order
     legend_handles = OrderedDict()
 
     # Initialize legend_handles with keys from plot_legend and empty lists
-    for process in temp:
+    for process in plot_legend:
         legend_handles[process] = None
 
     # Plotting logic
@@ -357,65 +437,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
     columns = lc.unique_elements_list(database_name)
 
-
-    x_axis = []
-    GWP_value = []
-
-    # Obtaining the contribution of each scenario for the life stages 
-    for col in df_GWP.columns:
-        for i, row in df_GWP.iterrows():
-            # Empty list to store the process name and the value
-            lst_x = []
-            lst_GWP = []
-            # initial value for the total value of the gwp total
-            gwp_tot = 0
-            # Iterating over each nested list
-            for lst in row[col]:
-                x = lst[0]
-                gwp = lst[1]
-
-                # Updating the name of process
-                x, gwp = flow_name_update(x, gwp, db_type, database_name)
-                if 'Avoided mat. prod.' in x and gwp > 0:
-                    gwp = -gwp
-
-                lst_x.append(x)
-                lst_GWP.append(gwp)
-                gwp_tot += gwp
-            
-            # Setting the updated list back into a new nested list
-            lst_GWP.append(gwp_tot)
-            lst_x.append('Total')
-            x_axis.append(lst_x)
-            GWP_value.append(lst_GWP)
-
-    # Create an empty dictionary to collect the data
-    key_dic = {}
-
-    # Collect the data into the dictionary
-    for i, p in enumerate(GWP_value):
-        for a, b in enumerate(p):
-            key = (flow_legend[i], x_axis[i][a])
-            if key in key_dic:
-                key_dic[key] += b
-            else:
-                key_dic[key] = b
-
-    # Convert the dictionary into a DataFrame
-    df = pd.DataFrame(list(key_dic.items()), columns=['Category', 'Value'])
-
-    # Separate 'Total' values from the rest
-    totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Total']
-    df = df[df['Category'].apply(lambda x: x[1]) != 'Total']
-
-    # Pivot the DataFrame to have a stacked format
-    df_stacked = df.pivot_table(index=[df['Category'].apply(lambda x: x[0])], columns=[df['Category'].apply(lambda x: x[1])], values='Value', aggfunc='sum').fillna(0)
-
-    # Create a DataFrame to store results
-    df_stack_updated = pd.DataFrame(0, index=flow_legend, columns=columns[:-1], dtype=object)  # dtype=object to handle lists
-    for col in df_stack_updated.columns:
-        for inx, row in df_stack_updated.iterrows():
-            row[col] = df_stacked[col][inx]
+    df_stack_updated, totals_df = process_categorizing(df_GWP, db_type, database_name, '', flow_legend, columns)
 
     y_min = y_axis_values[0]
     y_max = y_axis_values[1]
@@ -458,33 +480,101 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     plt.savefig(os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')
     plt.show()
 
-    return df_stack_updated
 
-def break_even_graph(df_stacked, inputs, plot_structure):
+def break_even_orginization(df_be, database_name):
+    df_be_copy = dc(df_be)
+    if 'sterilization' in database_name:
+        wipe_small_container = df_be.at['ASW', 'Container cleaning']
+        wipe_large_container = df_be.at['ALW', 'Container cleaning']
+
+        # Avoided energy
+        cabinet_small_avoided_energy = df_be.at['ASC', 'Avoided energy prod.']
+        wipe_small_avoided_energy = df_be.at['ASW', 'Avoided energy prod.']
+
+        allocate_avoided_energy_S = wipe_small_avoided_energy - cabinet_small_avoided_energy
+
+        cabinet_large_avoided_energy = df_be.at['ALC', 'Avoided energy prod.']
+        wipe_large_avoided_energy = df_be.at['ALW', 'Avoided energy prod.']
+
+        allocate_avoided_energy_L = wipe_large_avoided_energy - cabinet_large_avoided_energy
+
+
+        # Packaging
+        cabinet_small_packaging = df_be.at['ASC', 'Packaging']
+        wipe_small_packaging = df_be.at['ASW', 'Packaging']
+
+        allocate_packaging_S = wipe_small_packaging - cabinet_small_packaging
+
+        cabinet_large_packaging = df_be.at['ALC', 'Packaging']
+        wipe_large_packaging = df_be.at['ALW', 'Packaging']
+
+        allocate_packaging_L = wipe_large_packaging - cabinet_large_packaging
+
+        # Incineration
+        cabinet_small_inc = df_be.at['ASC', 'Incineration']
+        wipe_small_inc = df_be.at['ASW', 'Incineration']
+
+        allocate_inc_S = wipe_small_inc - cabinet_small_inc
+
+        cabinet_large_inc = df_be.at['ALC', 'Incineration']
+        wipe_large_inc = df_be.at['ALW', 'Incineration']
+
+        allocate_inc_L = wipe_large_inc - cabinet_large_inc
+
+        # Calculating the new sums
+
+        wipe_small_container_new = wipe_small_container + allocate_avoided_energy_S + allocate_packaging_S + allocate_inc_S
+
+        wipe_large_container_new = wipe_large_container + allocate_avoided_energy_L + allocate_packaging_L + allocate_inc_L
+
+
+        df_be_copy.at['ASW', 'Avoided energy prod.'] = cabinet_small_avoided_energy
+        df_be_copy.at['ALW', 'Avoided energy prod.'] = cabinet_large_avoided_energy
+
+        df_be_copy.at['ASW', 'Packaging'] = cabinet_small_packaging
+        df_be_copy.at['ALW', 'Packaging'] = cabinet_large_packaging
+
+        df_be_copy.at['ASW', 'Incineration'] = cabinet_small_inc
+        df_be_copy.at['ALW', 'Incineration'] = cabinet_large_inc
+
+        df_be_copy.at['ASW', 'Container cleaning'] = wipe_small_container_new
+        df_be_copy.at['ALW', 'Container cleaning'] = wipe_large_container_new
+
+    return df_be_copy
+
+def break_even_graph(df_GWP, inputs, plot_structure):
     # Unpack inputs
-    colors, save_dir, db_type = inputs[1], inputs[2], inputs[3]
+    flow_legend, colors, save_dir, db_type, database_name = inputs
     amount_of_uses, y_max, ystep, xstep, break_even_product, color_idx = plot_structure
 
+    columns = lc.unique_elements_list(database_name)
+    case = 'break even'
+    df_be, ignore = process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns)
+
+    
+    df_be_copy = break_even_orginization(df_be, database_name)
+
+
     # Split index into small and large based on criteria
-    small_idx = [idx for idx in df_stacked.index if '2' in idx or 'AS' in idx]
-    large_idx = [idx for idx in df_stacked.index if idx not in small_idx]
+    small_idx = [idx for idx in df_be_copy.index if '2' in idx or 'AS' in idx]
+    large_idx = [idx for idx in df_be_copy.index if idx not in small_idx]
 
     # Create empty DataFrames for each scenario
     scenarios = {
-        'small': pd.DataFrame(0, index=small_idx, columns=df_stacked.columns, dtype=object),
-        'large': pd.DataFrame(0, index=large_idx, columns=df_stacked.columns, dtype=object)
+        'small': pd.DataFrame(0, index=small_idx, columns=df_be_copy.columns, dtype=object),
+        'large': pd.DataFrame(0, index=large_idx, columns=df_be_copy.columns, dtype=object)
     }
 
     # Fill scenarios with data
     for sc_idx, (scenario_name, scenario_df) in enumerate(scenarios.items()):
-        scenario_df.update(df_stacked.loc[scenario_df.index])
+        scenario_df.update(df_be_copy.loc[scenario_df.index])
 
         alu_box_use, production = {}, {}
 
         for idx, row in scenario_df.iterrows(): 
             use, prod = 0, 0
-            for col in df_stacked.columns:
-                if ('Autoclave' in col or 'Box cleaning' in col) and 'H' not in idx:
+            for col in df_be_copy.columns:
+                if ('Autoclave' in col or 'Container cleaning' in col) and 'H' not in idx:
                     alu_box_use[idx] = row[col] + use
                     use += row[col]
                 elif 'A' in idx:
@@ -514,16 +604,7 @@ def break_even_graph(df_stacked, inputs, plot_structure):
                 else:
                     ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
             except IndexError:
-                print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')
-            # else:
-            #     if 'H' in key:
-            #         ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx + 2], markersize=3.5)
-            #     else:
-            #         ax.plot(value, label=key, color=colors[color_idx + 2], markersize=3.5)
-            
-        #ax.axhline(y = 0, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
-
-        
+                print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
 
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')

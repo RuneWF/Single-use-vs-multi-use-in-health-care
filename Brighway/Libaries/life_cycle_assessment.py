@@ -748,7 +748,7 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
         # Import LCIA results
         try:
             df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
-            user_input = input("Do you want to redo the calculations for some process (select 'a' if you want to redo eveything)? [y/n]")
+            user_input = input("Do you want to redo the calculations for some process (select 'a' if you want to redo eveything, or select 'r' to recalculate based only on the FU)? [y/n]")
             if 'y' in user_input.lower():
                 df_unique_new = redo_LCIA_unique_process(df_unique, initialization, unique_process_index, file_name_unique, sheet_name)
             elif 'a' in user_input.lower():
@@ -759,7 +759,7 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     else:
         quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
 
-    if 'a' in user_input.lower() or 'y' in user_input.lower():
+    if 'a' in user_input.lower() or 'y' in user_input.lower() or 'r' in user_input.lower():
         df_unique_new = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
 
         df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
