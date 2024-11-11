@@ -101,7 +101,7 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             x = x.replace(f' - {db_type}', '')
         x_og = x
 
-        if 'cabinet' in x or 'wipe' in x:
+        if 'cabinet' in x or 'wipe' in x or 'packaging film' in x:
             x = 'Container cleaning'
 
         if 'alubox' in x:       
@@ -140,7 +140,7 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
         if 'no Energy Recovery' in x or 'incineration' in x:
             x = 'Incineration'
 
-        if 'board box' in x or 'packaging film' in x:
+        if 'board box' in x:
             x = 'Packaging'
 
         if 'autoclave' in x:
@@ -173,7 +173,6 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     index = np.arange(len(columns_to_plot))
 
     # Plotting each group of bars
-    min_val = 0
     for i, process in enumerate(df_scaled.index):
         values = df_scaled.loc[process, columns_to_plot].values
         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
@@ -181,8 +180,9 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     # Setting labels and title
     ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=16)
     ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
-    ax.set_xticklabels(plot_x_axis,  weight='bold', fontsize=12)
-
+    ax.set_xticklabels(plot_x_axis, fontsize=10)
+    ax.set_xlim(-0.2, len(columns_to_plot))
+    
     # Specifying the direction of the text on the axis should be rotated
     if 'endpoint' not in impact_category[0][0]:
         plt.xticks(rotation=90)
@@ -479,7 +479,6 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')
     plt.show()
-
 
 def break_even_orginization(df_be, database_name):
     df_be_copy = dc(df_be)

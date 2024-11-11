@@ -755,6 +755,7 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
                 quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
 
         except ValueError: # Recalculating everything if the saved dataframe does not have the same amount of process as the now
+            print("ValueError encountered")
             quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
     else:
         quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
@@ -783,6 +784,6 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     
     df = import_LCIA_results(file_name, flows, impact_category)
 
-    return df, plot_x_axis_all, impact_categories, functional_unit
+    return df, plot_x_axis_all, impact_categories
 
 
