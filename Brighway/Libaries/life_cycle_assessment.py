@@ -6,6 +6,7 @@ import copy
 import bw2data as bd
 import bw2io as bi
 import brightway2 as bw 
+import bw2calc as bc
 
 # Importing self-made libaries
 from standards import *
@@ -232,15 +233,7 @@ def LCA_initialization(project_name: str, database_name: str, flows: list, metho
                     # if exc.input in eidb or exc.input in eidb_db or exc.input in eidb_cyl:
                     #     product_details_code[proc['name']].append([exc.input, exc.input['name'], exc.input['code'], exc['amount']])
 
-    FU_procces = []
 
-    # Obtaining the process for the FU
-    for flow in flows:
-        for flow_length in range(len(product_details[flow])):
-            for key in product_details[flow][flow_length].keys():
-                if flow in key:
-                    key = key.replace(f'{flow} ', '')
-                FU_procces.append(key)
 
     FU = []
     # Creating the FU to calculate for
@@ -250,7 +243,7 @@ def LCA_initialization(project_name: str, database_name: str, flows: list, metho
                 FU.append({key: {m[1]: m[0]}})
 
     print('Initialization is completed')
-    return FU, FU_procces, impact_category, plot_x_axis
+    return FU, impact_category, plot_x_axis
 
 def copy_process(process_code: str, eidb_consq, eidb):
     try:
@@ -277,45 +270,6 @@ def copy_process(process_code: str, eidb_consq, eidb):
         print(f"Error copying process from eidb_consq: {e}")
     return None
 
-# Function to perform the LCIA calculations
-def life_cycle_impact_assessment(flows, functional_unit, impact_categories, process):
-    print('\nCalculating the LCA results:')
-
-    # Ensure impact categories is a list
-    impact_categories = list(impact_categories) if isinstance(impact_categories, tuple) else impact_categories
-
-    # Create a DataFrame to store results
-    df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
-
-    calc_count = 1
-    total_calculations = len(impact_categories) * len(functional_unit)
-
-    # Loop through each impact category and flow
-    for col, impact in enumerate(impact_categories):
-        for row_idx, f in enumerate(flows):
-            df_lst = []
-            
-            # Find matches in functional units and calculate LCA
-            for func_unit, func_dict in enumerate(functional_unit):
-                for FU_key, FU_item in func_dict.items():
-                    if f in FU_key:
-                        # Perform LCA
-                        lca = bw.LCA(FU_item, impact)
-                        lca.lci()
-                        lca.lcia()
-                        
-                        # Append result to list
-                        df_lst.append([process[func_unit] if len(process) > 1 else process, lca.score])
-
-                        # Print progress
-                        print(f"Calculation {calc_count} of {total_calculations}: {FU_item}, {impact[1]}, Score: {lca.score}")
-                        calc_count += 1
-
-            # Assign list to DataFrame cell
-            df.iat[row_idx, col] = df_lst
-            print(f'{impact[1]} at row {row_idx} col {col} has been assigned the list {df_lst}')
-    
-    return df
 
 # saving the LCIA results to excel
 def save_LCIA_results(df, file_name, sheet_name, impact_category):
@@ -355,24 +309,6 @@ def import_LCIA_results(file_name, flow, impact_category):
     # Return the imported dataframe
     return df
 
-# Simplified function to perform the initialization and LCIA results 
-def calculate_lcia(calculate, initialization, file_name, sheet_name):
-
-    database_project, database_name, flows, lcia_meth, db_type = initialization
-    # Performing the initialization
-    FU, FU_proc, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_meth, db_type)
-    
-    # Checking if the LCIA calculations needs to be performed  
-    if calculate is True:
-        # Caculating the LCA results
-        df = life_cycle_impact_assessment(flows, FU, impact_category, FU_proc)
-        save_LCIA_results(df, file_name, sheet_name, impact_category)
-
-    # Import the LCIA results
-    df = import_LCIA_results(file_name, flows, impact_category)
-
-    # Return the dataframe with LCIA results, the LCIA categories and the names for each value on the x-axis
-    return df, impact_category, plot_x_axis_all, FU
 
 # Function to seperate the midpoint and endpoint results for ReCiPe
 def recipe_dataframe_split(df):
@@ -465,109 +401,9 @@ def unique_elements_list(database_name):
 
     return unique_elements
 
-# Function to recalaculate results where it can be choses which scenarios shall be recalclated
-def recalculate_lcia(redo, df, initialization, file_name, sheet_name):
-    if redo == True:
-        database_project, database_name, flows, lcia_meth, db_type = initialization
-
-        # Empty dictionary to store which scenarios shall be recalculated
-        redo_dict = {}
-
-        # Asking the user to specify which scenarios shall be recalculated
-        for idx in df.index:
-            # If the user enters y it will be recalculated and n means it will not
-            user_input = input(f'Do you want to redo the calculation for {idx}? [y/n]') # https://www.w3schools.com/python/python_user_input.asp
-            if 'y' in user_input.lower():
-                redo_dict[idx] = True
-            else:
-                redo_dict[idx] = False
-            print(f'For {idx} is it chosen {redo_dict[idx]} to redo the calculation')
-
-        # Reobtaining the functional unit to redo the calculations
-        func_unit, process, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_meth, db_type)
-
-        redo_func_unit = []
-        unique_keys = []
-
-        # Extraction the specific functional unit
-        for fu in func_unit:
-            # print(fu)
-            for key, item in fu.items():
-                # print(key, item)
-                if redo_dict[key] == True:
-                    # print(fu)
-                    redo_func_unit.append(fu)
-                    if key not in unique_keys:
-                        unique_keys.append(key)
-
-
-        impact_categories = df.columns
-        m = len(impact_categories)
-        df_copy = copy.deepcopy(df)
-
-        # Create a DataFrame to store the redone results
-        df_redo = pd.DataFrame(0, index=unique_keys, columns=impact_categories, dtype=object)  # dtype=object to handle lists
-
-        row_counter = 0
-        calc_count = 1
-
-        # Loop through each impact categories to calculate LCIA results for each process
-        for col, impact in enumerate(impact_categories):
-            # Loop through flows
-            for f in unique_keys:
-                df_lst = []  # Clear list for each flow in each impact category
-                for func_unit in range(len(redo_func_unit)):
-                    for FU_key, FU_item in redo_func_unit[func_unit].items():
-                        if f in FU_key:
-                            # Perform LCA
-                            lca = bw.LCA(FU_item, impact)
-                            lca.lci()
-                            lca.lcia()
-                            if len(process) == 1:
-                                df_lst.append([process, lca.score])
-                            else:
-                                df_lst.append([process[func_unit], lca.score])
-
-                            # Print progress
-                            print(f"Calculation {calc_count} of {m * len(redo_func_unit)}", FU_item, impact[1], lca.score)
-                            calc_count += 1
-                
-                # Assign the list of results to the DataFrame
-                df_redo.iloc[row_counter, col] = df_lst
-                # Update the row counter
-                row_counter += 1
-                
-                print(f'{impact[1]} at row {row_counter - 1} col {col} has been assigned the list {df_lst}')
-
-                
-                if row_counter == len(unique_keys):  # Reset when all flows have been processed in the column
-                    row_counter = 0
-
-        # Inserting the recalculated results
-        row_counter = 0
-        for icol, col in enumerate(impact_categories):
-            for idx, row in df_copy.iterrows():
-                if idx in df_redo.index:
-                    # print(idx, df_redo[col].loc[idx])
-                    new_val = df_redo[col].loc[idx]
-                    df_copy.iloc[row_counter, icol] = new_val
-                row_counter += 1
-                
-            
-                if row_counter == len(unique_keys):  # Reset when all flows have been processed in the column
-                    row_counter = 0
-        
-        # Saving the new dataframe
-        save_LCIA_results(df_copy, file_name, sheet_name, impact_category)
-
-        return df_copy
-    
-    else:
-        # If recalculate is not chosen it returns the same dataframe
-        return df
-
 # Function to rearrange the data in the dataframe
-def rearrange_dataframe_index(rearrange, df):
+def rearrange_dataframe_index(df):
+    rearrange = True if input('Do you want to rearrange the data? [y/n]') == 'y' else False
     # Checking if rearrange is chosen
     if rearrange == True:
         idx_dct = {}
@@ -619,7 +455,7 @@ def quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_cate
         print(f'Calculating the results for {impact[1]}')
         for row_idx, (key, item) in enumerate(uniquie_process_dct.items()):
             # Perform LCA
-            lca = bw.LCA({key :item}, impact)
+            lca = bc.LCA({key :item}, impact)
             lca.lci()
             lca.lcia()
             unique_process_results[impact].append({key: lca.score})
@@ -638,7 +474,7 @@ def quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_cate
 
 def redo_LCIA_unique_process(df_unique, initialization, unique_process_index, file_name_unique, sheet_name):
     database_project, database_name, flows, lcia_method, db_type =  initialization
-    functional_unit, process, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
+    functional_unit, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
 
 
     # Ensure impact categories is a list
@@ -682,7 +518,7 @@ def redo_LCIA_unique_process(df_unique, initialization, unique_process_index, fi
         print(f'Calculating the results for {impact[1]}')
         for row_idx, (key, item) in enumerate(redo_func_unit.items()):
             # Perform LCA
-            lca = bw.LCA({key :item}, impact)
+            lca = bc.LCA({key :item}, impact)
             lca.lci()
             lca.lcia()
             unique_process_results[impact].append({key: lca.score})
@@ -710,13 +546,11 @@ def redo_LCIA_unique_process(df_unique, initialization, unique_process_index, fi
 
 def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     database_project, database_name, flows, lcia_method, db_type = initialization
-    functional_unit, process, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
+    functional_unit, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
 
 
     # Ensure impact categories is a list
     impact_categories = list(impact_category) if isinstance(impact_category, tuple) else impact_category
-
-
     # Loop through each impact category and flow
     
     unique_process_index = []
@@ -760,7 +594,7 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     else:
         quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name)
 
-    if 'a' in user_input.lower() or 'y' in user_input.lower() or 'r' in user_input.lower():
+    if 'n' not in user_input.lower():
         df_unique_new = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
 
         df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
