@@ -785,5 +785,3 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     df = import_LCIA_results(file_name, flows, impact_category)
 
     return df, plot_x_axis_all, impact_categories
-
-
