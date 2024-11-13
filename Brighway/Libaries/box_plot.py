@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 def box_plot(path, inputs, plot_structure):
-    c0, c1, c2, plot_label, save_name, leg_size, y_min, y_max, ystep = plot_structure
+    c0, c1, c2, plot_label, save_name, leg_size, y_min, y_max, ystep, life_time = plot_structure
     colors = inputs[1]
     save_dir = inputs[2]
 
@@ -14,7 +14,7 @@ def box_plot(path, inputs, plot_structure):
 
     for col in df_bp.columns:
         for i, row in df_bp.iterrows():
-            row[col] *= 365*10
+            row[col] *= 365 * life_time
 
     # Update font size
     plt.rcParams.update({'font.size': 10})
@@ -30,15 +30,15 @@ def box_plot(path, inputs, plot_structure):
 
     for i, line in enumerate(boxplot.lines):
         # Median lines
-        if i % 6 == 4:
+        if i % 6 == 4: # Every 6th element starting from 4 (e.g., 4, 10, 16) corresponds to the median line of each boxplot
             line.set_color(colors[c1])
             line.set_linewidth(1)
         # Whiskers
-        elif i % 6 == 0 or i % 6 == 1:
+        elif i % 6 == 0 or i % 6 == 1: # Every 6th element starting from 0 or 1 corresponds to the lower and upper whisker lines, respectively
             line.set_color(colors[c0])
             line.set_linewidth(1)
         # Caps
-        elif i % 6 == 2 or i % 6 == 3:
+        elif i % 6 == 2 or i % 6 == 3: # Every 6th element starting from 2 or 3 corresponds to the lower and upper caps of the boxplot
             line.set_color(colors[c0])
             line.set_linewidth(1)
 
