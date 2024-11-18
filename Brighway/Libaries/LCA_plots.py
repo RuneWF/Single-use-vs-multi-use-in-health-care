@@ -470,8 +470,8 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
 
     # Setting labels and title
-    plt.title(f'GWP impact for each life stage for 1 FU - {db_type}', weight='bold')
-    plt.ylabel('Global Warming Potential [kg CO$_2$e]', weight='bold')
+    plt.title(f'GWP impact of each life stage for 1 FU - {db_type}', weight='bold')
+    plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]', weight='bold')
     plt.yticks(np.arange(y_min, y_max + 0.01, step=steps))
     plt.ylim(y_min-0.05, y_max+0.05)
     
@@ -608,8 +608,8 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
         plt.title(f'Break even for the {scenario_name} {break_even_product} - {db_type}', weight = 'bold')
-        plt.xlabel('Cleaning operation(s)',  weight = 'bold')
-        plt.ylabel('Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
+        plt.xlabel('Use',  weight = 'bold')
+        plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
         plt.xlim(0, amount_of_uses)
         plt.xticks(range(0, amount_of_uses, xstep))
 
