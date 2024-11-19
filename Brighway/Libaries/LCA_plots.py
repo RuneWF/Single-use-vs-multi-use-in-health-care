@@ -67,29 +67,35 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Manufacturing'
 
 
-    elif 'Lobster' in database_name:
-            if 'sc1' in x:
-                x = x.replace(f'sc1 ', '')
-            elif 'sc2' in x:
-                x = x.replace(f'sc2 ', '')
-            elif 'sc3' in x:
-                x = x.replace(f'sc3 ', '')
-            elif 'Waste' in x:
-                x = 'Incineration'
-            elif 'market for electricity' in x:
-                x = 'Avoided electricity'
-            elif 'heating' in x:
-                x = 'Avoided heat'
-            elif 'erbe' in x:
+    elif 'Lobster' in database_name or 'model' in database_name:
+            if f'- {db_type}' in x:
+                x = x.replace(f' - {db_type}', '')
+            if 'erbe' in x:
                 x = 'Erbe'
-            elif '(use) DK' in x:
-                x = x.replace(' (use) DK', '')
-            elif '(use) - DK' in x:
-                x = x.replace(' (use) - DK', '')
-            elif '(prod) DE' in x:
-                x = x.replace(' (prod) DE', '')
-            elif 'Remanufacturing' in x:
+            if 'remanufacturing' in x.lower():
                 x = 'Remanufacturing'
+            # if 'board box' in x or 'packaging' in x:
+            #     x = 'Packaging'
+            if 'waste paper to pulp' in x:
+                x = 'Avoided mat. prod.'
+            if 'electricity' in x:
+                x = 'Avoided energy prod.'
+            if 'heating' in x:
+                x = 'Avoided heat prod.'
+            if 'Waste' in x:
+                x = 'Incineration'
+            if 'dishwasher' in x:
+                x = 'Dishwasher'
+            if 'autoclave' in x:
+                x = 'Autoclave'
+            if 'transport' in x:
+                x = 'Transport'
+            if 'packaging' in x:
+                x = 'Packaging'
+            if 'raw mat' in x:
+               x = 'Raw mat.'
+            if 'manufacturing' in x:
+                x = 'Manufacturing'
 
     return x, gwp
 
@@ -136,7 +142,6 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
                 x = 'Avoided mat. prod.'
             else:
                 x = 'Raw mat.'
-       
         if 'no Energy Recovery' in x or 'incineration' in x:
             x = 'Incineration'
 
@@ -150,8 +155,38 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
         if 'polysulfone' in x:
             x = 'Manufacturing'
 
-    return x, gwp
+    elif 'Lobster' in database_name or 'model' in database_name:
+            if f'- {db_type}' in x:
+                x = x.replace(f' - {db_type}', '')
+            if 'erbe' in x:
+                x = 'Erbe'
+            if 'remanufacturing' in x.lower():
+                x = 'Remanufacturing'
+            # if 'board box' in x or 'packaging' in x:
+            #     x = 'Packaging'
+            if 'waste paper to pulp' in x:
+                x = 'Avoided mat. prod.'
+            if 'electricity' in x:
+                x = 'Avoided energy prod.'
+            if 'heating' in x:
+                x = 'Avoided heat prod.'
+            if 'Waste' in x:
+                x = 'Incineration'
+            if 'dishwasher' in x:
+                x = 'Dishwasher'
+            if 'autoclave' in x:
+                x = 'Autoclave'
+            if 'transport' in x:
+                x = 'Transport'
+            if 'packaging' in x:
+                x = 'Packaging'
+            if 'raw mat' in x:
+               x = 'Raw mat.'
+            if 'manufacturing' in x:
+                x = 'Manufacturing'
 
+
+    return x, gwp
 
 # Function to create the scaled FU plot
 def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
@@ -233,8 +268,6 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
     x_axis = []
     GWP_value = []
 
-    
-
     for col in df_GWP.columns:
         for i, row in df_GWP.iterrows():
             lst_x = []
@@ -262,8 +295,6 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
             x_axis.append(lst_x)
             GWP_value.append(lst_GWP)
 
-
-
     # Create an empty dictionary to collect the data
     key_dic = {}
 
@@ -275,6 +306,7 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
                 key_dic[key] += b
             else:
                 key_dic[key] = b
+            # print(key)
 
     # Convert the dictionary into a DataFrame
     df = pd.DataFrame(list(key_dic.items()), columns=['Category', 'Value'])
@@ -287,12 +319,19 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
     df_stacked = df.pivot_table(index=[df['Category'].apply(lambda x: x[0])], columns=[df['Category'].apply(lambda x: x[1])], values='Value', aggfunc='sum').fillna(0)
 
     # Create a DataFrame to store results
+
     df_stack_updated = pd.DataFrame(0, index=flow_legend, columns=columns[:-1], dtype=object)  # dtype=object to handle lists
     for col in df_stack_updated.columns:
         for inx, row in df_stack_updated.iterrows():
-            row[col] = df_stacked[col][inx]
-                
+            # print(df_stacked[col])
+            try:
+                row[col] = df_stacked[col][inx]
 
+            except KeyError:
+                # print(f"keyerror at {inx}")
+                pass
+
+                
     return df_stack_updated, totals_df
 
 def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
@@ -415,12 +454,12 @@ def category_organization(database_name):
         "Total": ["Total"]
         }
     
-    elif 'Lobster' in database_name:
+    elif 'Lobster' in database_name or 'model' in database_name:
         category_mapping = {
-        "Raw mat. + prod.": ["Diathermy", "Bipolar burner", "Scalpel"],
+        "Raw mat. + prod.": ["Packaging", "Raw mat.", "Manufacturing"],
         "Use": ["Autoclave", "Dishwasher", "Erbe", "Remanufacturing"],
         "Transport": ["Transport"],
-        "EoL": ["Incineration", "Avoided heat", "Avoided electricity"],
+        "EoL": ["Incineration", "Avoided heat prod.", "Avoided energy prod."],
         "Total": ["Total"]
         }
 
@@ -550,36 +589,87 @@ def break_even_graph(df_GWP, inputs, plot_structure):
     case = 'break even'
     df_be, ignore = process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns)
 
-    
-    df_be_copy = break_even_orginization(df_be, database_name)
+    if 'sterilization' in database_name:
+        df_be_copy = break_even_orginization(df_be, database_name)
+        # Split index into small and large based on criteria
+        small_idx = [idx for idx in df_be_copy.index if '2' in idx or 'AS' in idx]
+        large_idx = [idx for idx in df_be_copy.index if idx not in small_idx]
 
+        # Create empty DataFrames for each scenario
+        scenarios = {
+            'small': pd.DataFrame(0, index=small_idx, columns=df_be_copy.columns, dtype=object),
+            'large': pd.DataFrame(0, index=large_idx, columns=df_be_copy.columns, dtype=object)
+        }
 
-    # Split index into small and large based on criteria
-    small_idx = [idx for idx in df_be_copy.index if '2' in idx or 'AS' in idx]
-    large_idx = [idx for idx in df_be_copy.index if idx not in small_idx]
+        # Fill scenarios with data
+        for sc_idx, (scenario_name, scenario_df) in enumerate(scenarios.items()):
+            scenario_df.update(df_be_copy.loc[scenario_df.index])
 
-    # Create empty DataFrames for each scenario
-    scenarios = {
-        'small': pd.DataFrame(0, index=small_idx, columns=df_be_copy.columns, dtype=object),
-        'large': pd.DataFrame(0, index=large_idx, columns=df_be_copy.columns, dtype=object)
-    }
+            alu_box_use, production = {}, {}
 
-    # Fill scenarios with data
-    for sc_idx, (scenario_name, scenario_df) in enumerate(scenarios.items()):
-        scenario_df.update(df_be_copy.loc[scenario_df.index])
+            for idx, row in scenario_df.iterrows(): 
+                use, prod = 0, 0
+                for col in df_be_copy.columns:
+                    if ('Autoclave' in col or 'Container cleaning' in col) and 'H' not in idx:
+                        alu_box_use[idx] = row[col] + use
+                        use += row[col]
+                    elif 'A' in idx:
+                        production[idx] = (row[col] + prod) * amount_of_uses
+                        prod += row[col]
+                        
+                    else:
+                        production[idx] = row[col] + prod
+                        prod += row[col]
 
-        alu_box_use, production = {}, {}
+            # Calculate break-even values
+            be_dct = {}
+            for key, usage in production.items():
+                be_dct[key] = [usage if u == 1 else alu_box_use.get(key, usage) * u + usage
+                            for u in range(1, amount_of_uses + 1)]
 
-        for idx, row in scenario_df.iterrows(): 
+            # Plot results
+            fig, ax = plt.subplots(figsize=(10, 6))
+
+            
+
+            for idx, (key, value) in enumerate(be_dct.items()):
+                # if color_idx == 0:
+                try:
+                    if 'H' in key:
+                        ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], markersize=3.5)
+                    else:
+                        ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
+                except IndexError:
+                    print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
+
+            # Customize plot
+            ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
+            plt.title(f'Break even for the {scenario_name} {break_even_product} - {db_type}', weight = 'bold')
+            plt.xlabel('Use',  weight = 'bold')
+            plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
+            plt.xlim(0, amount_of_uses)
+            plt.xticks(range(0, amount_of_uses, xstep))
+
+            plt.ylim(0, y_max[sc_idx]+ 10)
+            plt.yticks(range(0, y_max[sc_idx] + 1, ystep[sc_idx]))
+            plt.tight_layout()
+
+            # Save and display plot
+            plt.savefig(os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.jpg'), bbox_inches='tight')
+            plt.show()
+
+    elif 'model' in database_name:
+        multi_use, production = {}, {}
+
+        for idx, row in df_be.iterrows(): 
             use, prod = 0, 0
-            for col in df_be_copy.columns:
-                if ('Autoclave' in col or 'Container cleaning' in col) and 'H' not in idx:
-                    alu_box_use[idx] = row[col] + use
+            for col in df_be.columns:
+                if ('Autoclave' in col or 'Dishwasher' in col) and 'RMD' not in idx and 'SUD' not in idx:
+                    multi_use[idx] = row[col] + use
                     use += row[col]
-                elif 'A' in idx:
+                elif 'MUD' in idx:
                     production[idx] = (row[col] + prod) * amount_of_uses
                     prod += row[col]
-                    
                 else:
                     production[idx] = row[col] + prod
                     prod += row[col]
@@ -587,8 +677,8 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         # Calculate break-even values
         be_dct = {}
         for key, usage in production.items():
-            be_dct[key] = [usage if u == 1 else alu_box_use.get(key, usage) * u + usage
-                           for u in range(1, amount_of_uses + 1)]
+            be_dct[key] = [usage if u == 1 else multi_use.get(key, usage) * u + usage
+                        for u in range(1, amount_of_uses + 1)]
 
         # Plot results
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -607,16 +697,16 @@ def break_even_graph(df_GWP, inputs, plot_structure):
 
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-        plt.title(f'Break even for the {scenario_name} {break_even_product} - {db_type}', weight = 'bold')
+        plt.title(f'Break even for the bipolar burner {break_even_product} - {db_type}', weight = 'bold')
         plt.xlabel('Use',  weight = 'bold')
         plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
         plt.xlim(0, amount_of_uses)
-        plt.xticks(range(0, amount_of_uses, xstep))
+        plt.xticks(range(0, amount_of_uses +1, xstep))
 
-        plt.ylim(0, y_max[sc_idx]+ 10)
-        plt.yticks(range(0, y_max[sc_idx] + 1, ystep[sc_idx]))
+        plt.ylim(0, y_max[0]+ 10)
+        plt.yticks(range(0, y_max[0] + 1, ystep[0]))
         plt.tight_layout()
 
         # Save and display plot
-        plt.savefig(os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.jpg'), bbox_inches='tight')
+        plt.savefig(os.path.join(save_dir, f'break_even_bipolar_{db_type}.jpg'), bbox_inches='tight')
         plt.show()

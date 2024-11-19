@@ -12,6 +12,59 @@ import bw2calc as bc
 from standards import *
 import LCA_plots as lp
 
+def initilization(path, lcia_method):
+    # Specifying if it is CONSQ (consequential) or APOS
+    ui1 = int(input('select 0 for APOS and 1 for CONSQ'))
+    if ui1 == 0:
+        db_type = 'APOS'
+    elif ui1 == 1:
+        db_type = 'CONSQ'
+    
+
+    
+
+    # Let the use decide the project and database
+    database_project, database_name = select_project_and_database()
+
+    # Creating the flow legend
+    if 'sterilization' in database_name:
+        flow_legend = ['H2R',
+                'H2S',
+                'ASC',
+                'ASW',
+                'H4R',
+                'H4S',
+                'ALC',
+                'ALW'
+                ]
+        file_identifier = 'Ananas'
+        res_folder_identifier = 'Ofir'
+    else:
+        flow_legend = ['SUD', 'RMD', ' MUD']
+        file_identifier = 'Lobster'
+        res_folder_identifier = 'Stine'
+
+    # Specifying the file name and sheet name
+    file_name = f'{path}\Results\{file_identifier} - {db_type}_{lcia_method}.xlsx'
+    sheet_name = f'{file_identifier}'
+
+    # Creating the saving directory for the results
+    save_dir = results_folder(path, 'Results', res_folder_identifier)
+
+    ui2 = int(input(f'Select 0 to choose flows based on {db_type}, else 1 for choosing them yourself'))
+    if ui2 == 0:
+        flows = get_database_type_flows(database_project, database_name, db_type)
+    elif ui2 == 1:
+        flows = get_user_specific_flows(database_project, database_name)
+    
+    print('Chosen flows:')
+    for f in flows:
+        print(f)
+
+    initialization = [database_project, database_name, flows, lcia_method, db_type]
+    file_name_unique = f'{path}\Results\{file_identifier} - {db_type}_{lcia_method}_unq.xlsx'
+
+    return flow_legend, database_name, file_name, sheet_name, save_dir, initialization, file_name_unique
 
 def select_project_and_database():
     projects = bd.projects.report()
