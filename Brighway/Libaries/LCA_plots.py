@@ -19,24 +19,23 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = x.replace(f' - {db_type}', '')
         x_og = x
         if 'alubox' in x:       
-
             x = x.replace('alubox ', '')
             if 'avoided' in x:
                 x = 'Avoided mat. prod.'
                 if gwp < 0:
                     gwp = -gwp
             if 'raw materials' in x:
-                x = 'Raw mat.' 
+                x = 'Raw mat. + prod.' 
                 if gwp < 0:
                     gwp = -gwp 
             if 'production' in x:
-                x = 'Manufacturing' 
+                x = 'Raw mat. + prod.' 
             if 'EoL' in x:
                 x = 'Recycling'
         if 'waste paper to pulp' in x:
             x = 'Avoided mat. prod.'
         if 'sheet manufacturing' in x:
-            x = 'Manufacturing'
+            x = 'Raw mat. + prod.'
         if 'electricity' in x:
             x = 'Avoided energy prod.'
         if 'heating' in x:
@@ -45,26 +44,24 @@ def flow_name_update(x, gwp, db_type, database_name):
             if gwp < 0:
                 x = 'Avoided mat. prod.'
             else:
-                x = 'Raw mat.'
+                x = 'Raw mat. + prod.'
         if 'PE granulate' in x:
             if gwp < 0:
                 x = 'Avoided mat. prod.'
             else:
-                x = 'Raw mat.'
+                x = 'Raw mat. + prod.'
         if 'no Energy Recovery' in x or 'incineration' in x:
             x = 'Incineration'
-
         if 'board box' in x or 'packaging film' in x:
-            x = 'Packaging'
-
+            x = 'Raw mat. + prod.'
         if 'autoclave' in x:
             x = 'Autoclave'
         if 'transport' in x:
-            x = 'Transport'
+            x = 'Raw mat. + prod.'
         if 'cabinet' in x or 'wipe' in x:
-            x = 'Container cleaning'
+            x = 'Disinfection'
         if 'polysulfone' in x:
-            x = 'Manufacturing'
+            x = 'Raw mat. + prod.'
 
 
     elif 'Lobster' in database_name or 'model' in database_name:
@@ -85,17 +82,11 @@ def flow_name_update(x, gwp, db_type, database_name):
             if 'Waste' in x:
                 x = 'Incineration'
             if 'dishwasher' in x:
-                x = 'Dishwasher'
+                x = 'Disinfection'
             if 'autoclave' in x:
                 x = 'Autoclave'
-            if 'transport' in x:
-                x = 'Transport'
-            if 'packaging' in x:
-                x = 'Packaging'
-            if 'raw mat' in x:
-               x = 'Raw mat.'
-            if 'manufacturing' in x:
-                x = 'Manufacturing'
+            if 'raw mat' in x or 'packaging' in x or 'manufacturing' in x or 'transport' in x:
+               x = 'Raw mat. + prod.'
 
     return x, gwp
 
@@ -106,10 +97,6 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             #print(key)
             x = x.replace(f' - {db_type}', '')
         x_og = x
-
-        if 'cabinet' in x or 'wipe' in x or 'packaging film' in x:
-            x = 'Container cleaning'
-
         if 'alubox' in x:       
             x = x.replace('alubox ', '')
             if 'avoided' in x:
@@ -117,17 +104,17 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
                 if gwp < 0:
                     gwp = -gwp
             if 'raw materials' in x:
-                x = 'Raw mat.' 
+                x = 'Raw mat. + prod.' 
                 if gwp < 0:
                     gwp = -gwp 
             if 'production' in x:
-                x = 'Manufacturing' 
+                x = 'Raw mat. + prod.' 
             if 'EoL' in x:
                 x = 'Recycling'
         if 'waste paper to pulp' in x:
             x = 'Avoided mat. prod.'
         if 'sheet manufacturing' in x:
-            x = 'Manufacturing'
+            x = 'Raw mat. + prod.'
         if 'electricity' in x:
             x = 'Avoided energy prod.'
         if 'heating' in x:
@@ -136,30 +123,30 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             if gwp < 0:
                 x = 'Avoided mat. prod.'
             else:
-                x = 'Raw mat.'
+                x = 'Raw mat. + prod.'
         if 'PE granulate' in x:
             if gwp < 0:
                 x = 'Avoided mat. prod.'
             else:
-                x = 'Raw mat.'
+                x = 'Raw mat. + prod.'
         if 'no Energy Recovery' in x or 'incineration' in x:
             x = 'Incineration'
-
-        if 'board box' in x:
-            x = 'Packaging'
-
+        if 'board box' in x or 'packaging film' in x:
+            x = 'Raw mat. + prod.'
         if 'autoclave' in x:
             x = 'Autoclave'
         if 'transport' in x:
-            x = 'Transport'
+            x = 'Raw mat. + prod.'
+        if 'cabinet' in x or 'wipe' in x:
+            x = 'Disinfection'
         if 'polysulfone' in x:
-            x = 'Manufacturing'
+            x = 'Raw mat. + prod.'
 
     elif 'Lobster' in database_name or 'model' in database_name:
             if f'- {db_type}' in x:
                 x = x.replace(f' - {db_type}', '')
             if 'erbe' in x:
-                x = 'Erbe'
+                x = 'Use'
             if 'remanufacturing' in x.lower():
                 x = 'Remanufacturing'
             # if 'board box' in x or 'packaging' in x:
@@ -173,17 +160,11 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             if 'Waste' in x:
                 x = 'Incineration'
             if 'dishwasher' in x:
-                x = 'Dishwasher'
+                x = 'Disinfection'
             if 'autoclave' in x:
                 x = 'Autoclave'
-            if 'transport' in x:
-                x = 'Transport'
-            if 'packaging' in x:
-                x = 'Packaging'
-            if 'raw mat' in x:
-               x = 'Raw mat.'
-            if 'manufacturing' in x:
-                x = 'Manufacturing'
+            if 'raw mat' in x or 'packaging' in x or 'manufacturing' in x or 'transport' in x:
+               x = 'Raw mat. + prod.'
 
 
     return x, gwp
@@ -195,6 +176,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     colors = inputs[1]
     save_dir = inputs[2]
     db_type = inputs[3]
+    database_name = inputs[4]
 
     # Extracting the columns plot
     columns_to_plot = df_scaled.columns
@@ -214,10 +196,15 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
 
     # Setting labels and title
     ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=16)
-    ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
+    ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
     ax.set_xticklabels(plot_x_axis, fontsize=10)
-    ax.set_xlim(-0.2, len(columns_to_plot))
-    
+    if 'sterilization' in database_name:
+        ax.set_xlim(-0.2, len(columns_to_plot))
+    elif 'model' in database_name:
+        ax.set_xlim(-0.2, len(columns_to_plot) -0.3)
+    else:
+        ax.set_xlim(0, len(columns_to_plot))
+
     # Specifying the direction of the text on the axis should be rotated
     if 'endpoint' not in impact_category[0][0]:
         plt.xticks(rotation=90)
@@ -447,19 +434,19 @@ def category_organization(database_name):
 
     if 'Ananas consq' in database_name or 'sterilization' in database_name:
         category_mapping = {
-        "Raw mat. + prod.": ["Raw mat.", "Manufacturing", "Packaging"],
-        "Use": ["Autoclave", "Container cleaning"],
-        "Transport": ["Transport"],
-        "EoL": ["Incineration", "Recycling", "Avoided mat. prod.", "Avoided energy prod."],
+        "Raw mat. + prod.": ["Raw mat. + prod."],
+        "Use": ["Disinfection", "Autoclave"],
+        "Recycling": ["Recycling"],
+        "EoL": ["Incineration", "Avoided energy prod.", "Avoided mat. prod." ],
         "Total": ["Total"]
         }
     
     elif 'Lobster' in database_name or 'model' in database_name:
         category_mapping = {
-        "Raw mat. + prod.": ["Packaging", "Raw mat.", "Manufacturing"],
-        "Use": ["Autoclave", "Dishwasher", "Erbe", "Remanufacturing"],
-        "Transport": ["Transport"],
-        "EoL": ["Incineration", "Avoided heat prod.", "Avoided energy prod."],
+        "Raw mat. + prod.": ["Raw mat. + prod."],
+        "Use": ["Use",  "Disinfection", "Autoclave"],
+        "Remanufacturing" : ["Remanufacturing"],
+        "EoL": ["Incineration", "Avoided energy prod.", "Avoided heat prod."],
         "Total": ["Total"]
         }
 
@@ -522,8 +509,8 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 def break_even_orginization(df_be, database_name):
     df_be_copy = dc(df_be)
     if 'sterilization' in database_name:
-        wipe_small_container = df_be.at['ASW', 'Container cleaning']
-        wipe_large_container = df_be.at['ALW', 'Container cleaning']
+        wipe_small_container = df_be.at['ASW', 'Disinfection']
+        wipe_large_container = df_be.at['ALW', 'Disinfection']
 
         # Avoided energy
         cabinet_small_avoided_energy = df_be.at['ASC', 'Avoided energy prod.']
@@ -537,16 +524,6 @@ def break_even_orginization(df_be, database_name):
         allocate_avoided_energy_L = wipe_large_avoided_energy - cabinet_large_avoided_energy
 
 
-        # Packaging
-        cabinet_small_packaging = df_be.at['ASC', 'Packaging']
-        wipe_small_packaging = df_be.at['ASW', 'Packaging']
-
-        allocate_packaging_S = wipe_small_packaging - cabinet_small_packaging
-
-        cabinet_large_packaging = df_be.at['ALC', 'Packaging']
-        wipe_large_packaging = df_be.at['ALW', 'Packaging']
-
-        allocate_packaging_L = wipe_large_packaging - cabinet_large_packaging
 
         # Incineration
         cabinet_small_inc = df_be.at['ASC', 'Incineration']
@@ -561,16 +538,13 @@ def break_even_orginization(df_be, database_name):
 
         # Calculating the new sums
 
-        wipe_small_container_new = wipe_small_container + allocate_avoided_energy_S + allocate_packaging_S + allocate_inc_S
+        wipe_small_container_new = wipe_small_container + allocate_avoided_energy_S + allocate_inc_S
 
-        wipe_large_container_new = wipe_large_container + allocate_avoided_energy_L + allocate_packaging_L + allocate_inc_L
+        wipe_large_container_new = wipe_large_container + allocate_avoided_energy_L  + allocate_inc_L
 
 
         df_be_copy.at['ASW', 'Avoided energy prod.'] = cabinet_small_avoided_energy
         df_be_copy.at['ALW', 'Avoided energy prod.'] = cabinet_large_avoided_energy
-
-        df_be_copy.at['ASW', 'Packaging'] = cabinet_small_packaging
-        df_be_copy.at['ALW', 'Packaging'] = cabinet_large_packaging
 
         df_be_copy.at['ASW', 'Incineration'] = cabinet_small_inc
         df_be_copy.at['ALW', 'Incineration'] = cabinet_large_inc
@@ -610,7 +584,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             for idx, row in scenario_df.iterrows(): 
                 use, prod = 0, 0
                 for col in df_be_copy.columns:
-                    if ('Autoclave' in col or 'Container cleaning' in col) and 'H' not in idx:
+                    if ('Autoclave' in col or 'Disinfection' in col) and 'H' not in idx:
                         alu_box_use[idx] = row[col] + use
                         use += row[col]
                     elif 'A' in idx:
@@ -688,7 +662,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         for idx, (key, value) in enumerate(be_dct.items()):
             # if color_idx == 0:
             try:
-                if 'H' in key:
+                if 'RMD' in key or 'SUD' in key:
                     ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], markersize=3.5)
                 else:
                     ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)

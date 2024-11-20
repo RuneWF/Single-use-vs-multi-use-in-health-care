@@ -19,9 +19,20 @@ def box_plot(path, inputs, plot_structure):
     # Update font size
     plt.rcParams.update({'font.size': 10})
 
-    # Create the box plot with filtered data
-    boxplot = sns.boxplot(data=df_bp, flierprops=dict(marker='o', color=colors[c0], markerfacecolor='w', markersize=6), color=colors[c0], linecolor=colors[c0])
+    # Create the boxplot
+    boxplot = sns.boxplot(
+        data=df_bp, 
+        flierprops=dict(marker='o', color='red', markerfacecolor='w', markersize=6), 
+        color = colors[c0],
+        linewidth=1.0  # Adjust overall line width for whiskers, caps, etc.
+    )
 
+    # Access the Q1-Q3 box elements and customize their linewidths
+    for box in boxplot.artists:  # `artists` contains the box elements
+        box.set_linewidth(0.8)  # Adjust the box thickness
+
+    
+    
     # Customize the colors for the plot components
     for patch in boxplot.artists:
         patch.set_facecolor(colors[c0])

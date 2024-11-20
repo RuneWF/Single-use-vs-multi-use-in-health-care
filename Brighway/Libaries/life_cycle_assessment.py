@@ -28,12 +28,12 @@ def initilization(path, lcia_method):
 
     # Creating the flow legend
     if 'sterilization' in database_name:
-        flow_legend = ['H2R',
-                'H2S',
+        flow_legend = ['H2S',
+                'H2R',
                 'ASC',
                 'ASW',
-                'H4R',
                 'H4S',
+                'H4R',
                 'ALC',
                 'ALW'
                 ]
@@ -64,7 +64,7 @@ def initilization(path, lcia_method):
     initialization = [database_project, database_name, flows, lcia_method, db_type]
     file_name_unique = f'{path}\Results\{file_identifier} - {db_type}_{lcia_method}_unq.xlsx'
 
-    return flow_legend, database_name, file_name, sheet_name, save_dir, initialization, file_name_unique
+    return flow_legend, database_name, file_name, sheet_name, save_dir, initialization, file_name_unique, db_type
 
 def select_project_and_database():
     projects = bd.projects.report()
