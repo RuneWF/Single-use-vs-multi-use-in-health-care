@@ -40,7 +40,7 @@ def initilization(path, lcia_method):
         file_identifier = 'Ananas'
         res_folder_identifier = 'Ofir'
     else:
-        flow_legend = ['SUD', 'RMD', ' MUD']
+        flow_legend = ['SUD', 'RMD', 'MUD']
         file_identifier = 'Lobster'
         res_folder_identifier = 'Stine'
 

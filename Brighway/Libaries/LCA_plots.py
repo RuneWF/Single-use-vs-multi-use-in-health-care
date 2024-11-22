@@ -13,11 +13,12 @@ importlib.reload(lc)
 
 # Function to update the flow name and simplify them
 def flow_name_update(x, gwp, db_type, database_name):
+    x_og = x
     if 'Ananas consq' in database_name or 'sterilization' in database_name:
         if f'- {db_type}' in x:
             #print(key)
             x = x.replace(f' - {db_type}', '')
-        x_og = x
+        
         if 'alubox' in x:       
             x = x.replace('alubox ', '')
             if 'avoided' in x:
@@ -68,8 +69,8 @@ def flow_name_update(x, gwp, db_type, database_name):
             if f'- {db_type}' in x:
                 x = x.replace(f' - {db_type}', '')
             if 'erbe' in x:
-                x = 'Erbe'
-            if 'remanufacturing' in x.lower():
+                x = 'Use'
+            if 'remanu' in x.lower():
                 x = 'Remanufacturing'
             # if 'board box' in x or 'packaging' in x:
             #     x = 'Packaging'
@@ -85,7 +86,7 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Disinfection'
             if 'autoclave' in x:
                 x = 'Autoclave'
-            if 'raw mat' in x or 'packaging' in x or 'manufacturing' in x or 'transport' in x:
+            if 'raw mat' in x or 'packaging' in x or ('manufacturing' in x and 'remanu' not in x.lower()) or 'transport' in x.lower() :
                x = 'Raw mat. + prod.'
 
     return x, gwp
@@ -147,7 +148,7 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
                 x = x.replace(f' - {db_type}', '')
             if 'erbe' in x:
                 x = 'Use'
-            if 'remanufacturing' in x.lower():
+            if 'remanu' in x.lower():
                 x = 'Remanufacturing'
             # if 'board box' in x or 'packaging' in x:
             #     x = 'Packaging'
@@ -163,7 +164,7 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
                 x = 'Disinfection'
             if 'autoclave' in x:
                 x = 'Autoclave'
-            if 'raw mat' in x or 'packaging' in x or 'manufacturing' in x or 'transport' in x:
+            if 'raw mat' in x or 'packaging' in x or ('manufacturing' in x and 'remanu' not in x.lower()) or 'transport' in x.lower():
                x = 'Raw mat. + prod.'
 
 
@@ -263,11 +264,11 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
             for lst in row[col]:
                 x = lst[0]
                 gwp = lst[1]
+                
                 if 'break even' in case.lower():
                     x, gwp = break_even_flow_seperation(x, gwp, db_type, database_name)
                 else:
                     x, gwp = flow_name_update(x, gwp, db_type, database_name)
-
                 # Updating the name of process
                 if 'Avoided mat. prod.' in x and gwp > 0:
                     gwp = -gwp
@@ -289,6 +290,8 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
     for i, p in enumerate(GWP_value):
         for a, b in enumerate(p):
             key = (flow_legend[i], x_axis[i][a])
+            # print(x_axis[i][a])
+
             if key in key_dic:
                 key_dic[key] += b
             else:
@@ -549,8 +552,8 @@ def break_even_orginization(df_be, database_name):
         df_be_copy.at['ASW', 'Incineration'] = cabinet_small_inc
         df_be_copy.at['ALW', 'Incineration'] = cabinet_large_inc
 
-        df_be_copy.at['ASW', 'Container cleaning'] = wipe_small_container_new
-        df_be_copy.at['ALW', 'Container cleaning'] = wipe_large_container_new
+        df_be_copy.at['ASW', 'Disinfection'] = wipe_small_container_new
+        df_be_copy.at['ALW', 'Disinfection'] = wipe_large_container_new
 
     return df_be_copy
 
