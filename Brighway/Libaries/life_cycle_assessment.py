@@ -20,9 +20,6 @@ def initilization(path, lcia_method):
     elif ui1 == 1:
         db_type = 'CONSQ'
     
-
-    
-
     # Let the use decide the project and database
     database_project, database_name = select_project_and_database()
 
@@ -40,7 +37,7 @@ def initilization(path, lcia_method):
         file_identifier = 'Ananas'
         res_folder_identifier = 'Ofir'
     else:
-        flow_legend = ['SUD', 'RMD', 'MUD']
+        flow_legend = ['SUD', 'MUD']
         file_identifier = 'Lobster'
         res_folder_identifier = 'Stine'
 
@@ -106,15 +103,15 @@ def lcia_method(method):
     if 'recipe' in method.lower():
         # Using H (hierachly) due to it has a 100 year span
         # Obtaining the midpoint categpries and ignoring land transformation (Land use still included)
-        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H)' in str(m) and 'no LT' not in str(m)] # Midpoint
+        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H) Runes edition' in str(m) and 'no LT' not in str(m)] # Midpoint
 
         # Obtaining the endpoint categories and ignoring land transformation
-        endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H)' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
+        endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H) Runes edition' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
 
         # Combining midpoint and endpoint, where endpoint is added to the list of the midpoint categories
         for meth in endpoint:
             all_methods.append(meth)
-
+            
         print('Recipe is selected')
 
     # Checking if EF is choses for the LCIA method
@@ -499,6 +496,7 @@ def rearrange_dataframe_index(df):
         return df
 
 def quick_LCIA_calculator(unique_process_index, uniquie_process_dct, impact_categories, file_name_unique, sheet_name):
+    impact_categories = [ic for ic in impact_categories]
     df_unique = pd.DataFrame(0, index=unique_process_index, columns=impact_categories, dtype=object)
     unique_process_results = {}
     calc_count = 1

@@ -82,6 +82,7 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Avoided heat prod.'
             if 'Waste' in x:
                 x = 'Incineration'
+                
             if 'dishwasher' in x:
                 x = 'Disinfection'
             if 'autoclave' in x:
@@ -194,7 +195,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     for i, process in enumerate(df_scaled.index):
         values = df_scaled.loc[process, columns_to_plot].values
         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
-
+    
     # Setting labels and title
     ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=16)
     ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
@@ -202,7 +203,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     if 'sterilization' in database_name:
         ax.set_xlim(-0.2, len(columns_to_plot))
     elif 'model' in database_name:
-        ax.set_xlim(-0.2, len(columns_to_plot) -0.3)
+        ax.set_xlim(-0.35, len(columns_to_plot) -0.3)
     else:
         ax.set_xlim(0, len(columns_to_plot))
 
@@ -476,7 +477,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
     # Plotting the stacked bar chart
     ax = df_stack_updated.plot(kind='bar', stacked=True, figsize=(10, 6), color=colors)
-    ax.axhline(y = -0.004, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
+    ax.axhline(y = 0, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
      
     # Plotting 'Total' values as dots and including it in the legend
     for flow in flow_legend:

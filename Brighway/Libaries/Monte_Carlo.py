@@ -104,18 +104,21 @@ def MC_simulation(iterations, flows, database, impact_category, results_file):
     FU_new, uncertainties = MC_set_up(flows, database)
     MC_idx = ['Mean', 'Median', 'Standard Deviation', 'Minimum', 'Maximum']
 
-    if type(impact_category) == tuple:        
+    if type(impact_category) == tuple: 
+        impact_category = [impact_category]
 
-        # Define the LCIA method
-        # for method in impact_category:
-        print(f'Doing Monte Carlo simulations for {impact_category}')
+    Monte_Carlo_dct = {}
+
+    for method in impact_category:
+        print(f'Doing Monte Carlo simulations for {method}')
 
         # Create a DataFrame to store results
         df_MC = pd.DataFrame(0, index=MC_idx, columns=FU_new.keys(), dtype=object)  # dtype=object to handle lists
         raw_data = []
+        
         for col in df_MC.columns:
             print(f'Processing {col}')
-            lcia_results_array = MonteCarlo(iterations, FU_new[col], impact_category, uncertainties[col])
+            lcia_results_array = MonteCarlo(iterations, FU_new[col], method, uncertainties[col])
             raw_data.append(lcia_results_array)
             for index, row in df_MC.iterrows():
                 # print(index, row[col])
@@ -133,57 +136,20 @@ def MC_simulation(iterations, flows, database, impact_category, results_file):
                     # print(index)
                 elif 'maximum' in index.lower():
                     row[col] = np.max(lcia_results_array)
-            with pd.ExcelWriter(f'{impact_category[1]} -' + results_file, engine='xlsxwriter') as writer:
+                    # print(index)
+                
+                
+                    
+        Monte_Carlo_dct[method[1]] = df_MC
+
+        with pd.ExcelWriter(results_file, engine='xlsxwriter') as writer:
+            for i, dataframe in enumerate(Monte_Carlo_dct.values()):
                 # Get the sheet name and clean it
-                sheet_name = clean_sheet_name(impact_category[1])
+                sheet_name = clean_sheet_name(impact_category[i][1])
                 # Save the dataframe to the corresponding sheet
-                df_MC.to_excel(writer, sheet_name=sheet_name)
+                dataframe.to_excel(writer, sheet_name=sheet_name)
 
-        return df_MC, raw_data
-        
-    else:
-        Monte_Carlo_dct = {}
-
-        for method in impact_category:
-            print(f'Doing Monte Carlo simulations for {method}')
-
-            # Create a DataFrame to store results
-            df_MC = pd.DataFrame(0, index=MC_idx, columns=FU_new.keys(), dtype=object)  # dtype=object to handle lists
-            raw_data = []
-            for col in df_MC.columns:
-                print(f'Processing {col}')
-                lcia_results_array = MonteCarlo(iterations, FU_new[col], method, uncertainties[col])
-                raw_data.append(lcia_results_array)
-                for index, row in df_MC.iterrows():
-                    # print(index, row[col])
-                    if 'mean' in index.lower():
-                        row[col] = np.mean(lcia_results_array)
-                        # print(index)
-                    elif 'median' in index.lower():
-                        row[col] = np.median(lcia_results_array)
-                        # print(index)
-                    elif 'standard' in index.lower():
-                        row[col] = np.std(lcia_results_array)
-                        # print(index)
-                    elif 'minimum' in index.lower():
-                        row[col] = np.min(lcia_results_array)
-                        # print(index)
-                    elif 'maximum' in index.lower():
-                        row[col] = np.max(lcia_results_array)
-                        # print(index)
-                    
-                    
-                        
-            Monte_Carlo_dct[method[1]] = df_MC
-
-            with pd.ExcelWriter(results_file, engine='xlsxwriter') as writer:
-                for i, dataframe in enumerate(Monte_Carlo_dct.values()):
-                    # Get the sheet name and clean it
-                    sheet_name = clean_sheet_name(impact_category[i][1])
-                    # Save the dataframe to the corresponding sheet
-                    dataframe.to_excel(writer, sheet_name=sheet_name)
-
-        return Monte_Carlo_dct, raw_data
+    return Monte_Carlo_dct, raw_data
 
 def MC_graphs(flow_legend, data, iterations, save_dir):
     
