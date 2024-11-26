@@ -4,10 +4,10 @@ import brightway2 as bw
 
 
 def remove_bio_co2_recipe():
-    all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H)' in str(m) and 'no LT' not in str(m)] # Midpoint
+    all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H) OG' in str(m) and 'no LT' not in str(m)] # Midpoint
 
     # Obtaining the endpoint categories and ignoring land transformation
-    endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H)' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
+    endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H) OG' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
 
     method_name_new_mid= all_methods[0][0] + ' Runes edition'
     method_name_new_end = endpoint[0][0] + ' Runes edition'

@@ -63,6 +63,7 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Raw mat. + prod.'
         if 'cabinet' in x or 'wipe' in x:
             x = 'Disinfection'
+            print(x_og,gwp)
         if 'polysulfone' in x:
             x = 'Raw mat. + prod.'
 
