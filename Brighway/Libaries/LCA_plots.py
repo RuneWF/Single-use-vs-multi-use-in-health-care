@@ -33,6 +33,8 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Raw mat. + prod.' 
             if 'EoL' in x:
                 x = 'Recycling'
+        if 'recycling' in x:
+                x = 'Recycling'
         if 'waste paper to pulp' in x:
             x = 'Avoided mat. prod.'
         if 'sheet manufacturing' in x:
@@ -112,6 +114,8 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             if 'production' in x:
                 x = 'Raw mat. + prod.' 
             if 'EoL' in x:
+                x = 'Recycling'
+        if 'recycling' in x:
                 x = 'Recycling'
         if 'waste paper to pulp' in x:
             x = 'Avoided mat. prod.'
@@ -474,27 +478,30 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     steps = y_axis_values[2]
     leg_pos = y_axis_values[3]
     marker_offset = y_axis_values[4]
+    marker_color = y_axis_values[5]
 
     # Plotting the stacked bar chart
     ax = df_stack_updated.plot(kind='bar', stacked=True, figsize=(10, 6), color=colors)
     ax.axhline(y = 0, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
-     
+    
     # Plotting 'Total' values as dots and including it in the legend
     for flow in flow_legend:
         for idx, row in totals_df.iterrows():
             if flow in row['Category'][0]:
                 unit = row['Category'][0]
                 total = row['Value']
-                ax.plot(unit, total, 'D', color='k', markersize=5, label='Total' if idx == 0 else "")
+                ax.plot(unit, total, 'D', color=marker_color, markersize=5, label='Total' if idx == 0 else "")
                 # Add the data value
-                ax.text(unit, total - marker_offset, f"{total:.2f}", ha='center', va='bottom', fontsize=9) # https://www.datacamp.com/tutorial/python-round-to-two-decimal-places?utm_source=google&utm_medium=paid_search&utm_campaignid=19589720824&utm_adgroupid=157156376311&utm_device=c&utm_keyword=&utm_matchtype=&utm_network=g&utm_adpostion=&utm_creative=684592140434&utm_targetid=dsa-2218886984100&utm_loc_interest_ms=&utm_loc_physical_ms=9197406&utm_content=&utm_campaign=230119_1-sea~dsa~tofu_2-b2c_3-row-p2_4-prc_5-na_6-na_7-le_8-pdsh-go_9-nb-e_10-na_11-na-oct24&gad_source=1&gclid=Cj0KCQiA_qG5BhDTARIsAA0UHSK7fmd8scMcHSkG_VMO1TWmeHapAM6cjV1QobZKKYotZPX7IcmJRF4aAhsyEALw_wcB
+                ax.text(unit, total - marker_offset, f"{total:.2f}", 
+                        ha='center', va='bottom', fontsize=9, 
+                        color = marker_color, weight = 'bold') # https://www.datacamp.com/tutorial/python-round-to-two-decimal-places?utm_source=google&utm_medium=paid_search&utm_campaignid=19589720824&utm_adgroupid=157156376311&utm_device=c&utm_keyword=&utm_matchtype=&utm_network=g&utm_adpostion=&utm_creative=684592140434&utm_targetid=dsa-2218886984100&utm_loc_interest_ms=&utm_loc_physical_ms=9197406&utm_content=&utm_campaign=230119_1-sea~dsa~tofu_2-b2c_3-row-p2_4-prc_5-na_6-na_7-le_8-pdsh-go_9-nb-e_10-na_11-na-oct24&gad_source=1&gclid=Cj0KCQiA_qG5BhDTARIsAA0UHSK7fmd8scMcHSkG_VMO1TWmeHapAM6cjV1QobZKKYotZPX7IcmJRF4aAhsyEALw_wcB
 
     
 
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor='k', markersize=6, label='Total'))
+    handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color, markersize=6, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
 
 
@@ -628,7 +635,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             plt.xlim(0, amount_of_uses)
             plt.xticks(range(0, amount_of_uses, xstep))
 
-            plt.ylim(0, y_max[sc_idx]+ 10)
+            plt.ylim(0, y_max[sc_idx]+ 1)
             plt.yticks(range(0, y_max[sc_idx] + 1, ystep[sc_idx]))
             plt.tight_layout()
 
