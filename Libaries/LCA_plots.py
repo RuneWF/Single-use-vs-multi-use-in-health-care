@@ -33,6 +33,7 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Raw mat. + prod.' 
             if 'EoL' in x:
                 x = 'Recycling'
+                # print(x_og,gwp)
         if 'recycling' in x:
                 x = 'Recycling'
         if 'waste paper to pulp' in x:
@@ -63,7 +64,6 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Raw mat. + prod.'
         if 'cabinet' in x or 'wipe' in x:
             x = 'Disinfection'
-            print(x_og,gwp)
         if 'polysulfone' in x:
             x = 'Raw mat. + prod.'
 
@@ -178,7 +178,7 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
 
 # Function to create the scaled FU plot
 def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
-    
+    plt.rc('axes', labelsize=10) 
     flow_legend = inputs[0]
     colors = inputs[1]
     save_dir = inputs[2]
@@ -202,7 +202,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
     
     # Setting labels and title
-    ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=16)
+    ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=14)
     ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
     ax.set_xticklabels(plot_x_axis, fontsize=10)
     if 'sterilization' in database_name:
@@ -220,8 +220,9 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
 
     # Setting the legend
     ax.legend(flow_legend,bbox_to_anchor=(1.01, legend_position, .1, 0), loc="lower left",
-                mode="expand", borderaxespad=0,  ncol=1, fontsize=10)
-    
+                mode="expand", borderaxespad=0,  ncol=1, fontsize=10.5)
+    plt.xticks(fontsize = 11)
+    plt.yticks(fontsize = 11)
     # Saving and showing the plot
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.jpg'), bbox_inches='tight')
@@ -261,7 +262,9 @@ def single_score_plot(directory, df_tot, inputs):
 def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns):
     x_axis = []
     GWP_value = []
-
+    raw_dct = {}
+    rec_dct = {}
+    comp  = {}
     for col in df_GWP.columns:
         for i, row in df_GWP.iterrows():
             lst_x = []
@@ -274,6 +277,13 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
                 if 'break even' in case.lower():
                     x, gwp = break_even_flow_seperation(x, gwp, db_type, database_name)
                 else:
+                    if 'alubox raw materials' in x:
+                        raw_dct[i] = abs(gwp)
+                    elif 'alubox EoL melting' in x:
+                        rec_dct[i] = abs(gwp)
+                    
+                    
+                        
                     x, gwp = flow_name_update(x, gwp, db_type, database_name)
                 # Updating the name of process
                 if 'Avoided mat. prod.' in x and gwp > 0:
@@ -288,6 +298,9 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
             lst_x.append('Total')
             x_axis.append(lst_x)
             GWP_value.append(lst_GWP)
+
+    for key, item in raw_dct.items():
+        comp[key] = rec_dct[key]/item*100
 
     # Create an empty dictionary to collect the data
     key_dic = {}
@@ -463,6 +476,7 @@ def category_organization(database_name):
 
 # Function to plot the global warming potentials showing the contribution of each life stage
 def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
+    
     # Using the inputs to specify the different variables
     flow_legend = inputs[0]
     colors = inputs[1]
@@ -494,7 +508,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
                 ax.plot(unit, total, 'D', color=marker_color, markersize=5, label='Total' if idx == 0 else "")
                 # Add the data value
                 ax.text(unit, total - marker_offset, f"{total:.2f}", 
-                        ha='center', va='bottom', fontsize=9, 
+                        ha='center', va='bottom', fontsize=10, 
                         color = marker_color, weight = 'bold') # https://www.datacamp.com/tutorial/python-round-to-two-decimal-places?utm_source=google&utm_medium=paid_search&utm_campaignid=19589720824&utm_adgroupid=157156376311&utm_device=c&utm_keyword=&utm_matchtype=&utm_network=g&utm_adpostion=&utm_creative=684592140434&utm_targetid=dsa-2218886984100&utm_loc_interest_ms=&utm_loc_physical_ms=9197406&utm_content=&utm_campaign=230119_1-sea~dsa~tofu_2-b2c_3-row-p2_4-prc_5-na_6-na_7-le_8-pdsh-go_9-nb-e_10-na_11-na-oct24&gad_source=1&gclid=Cj0KCQiA_qG5BhDTARIsAA0UHSK7fmd8scMcHSkG_VMO1TWmeHapAM6cjV1QobZKKYotZPX7IcmJRF4aAhsyEALw_wcB
 
     
@@ -503,17 +517,17 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     handles, labels = ax.get_legend_handles_labels()
 
     handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color, markersize=6, label='Total'))
-    ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .23, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10)
+    ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .24, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10.5)
 
 
-
-    # Setting labels and title
-    plt.title(f'GWP impact of each life stage for 1 FU - {db_type}', weight='bold')
-    plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]', weight='bold')
-    plt.yticks(np.arange(y_min, y_max + 0.01, step=steps))
-    plt.ylim(y_min-0.05, y_max+0.05)
     
-    plt.xticks(rotation=0)
+    # Setting labels and title
+    plt.title(f'GWP impact of each life stage for 1 FU - {db_type}', weight='bold', fontsize = 14)
+    
+    plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]', weight='bold', fontsize = 11)
+    plt.yticks(np.arange(y_min, y_max + 0.01, step=steps), fontsize = 11)
+    plt.ylim(y_min-0.05, y_max+0.05)
+    plt.xticks(rotation=0, fontsize = 11)
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')
     plt.show()

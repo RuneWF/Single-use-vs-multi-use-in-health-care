@@ -321,7 +321,6 @@ def copy_process(process_code: str, eidb_consq, eidb):
         print(f"Error copying process from eidb_consq: {e}")
     return None
 
-
 # saving the LCIA results to excel
 def save_LCIA_results(df, file_name, sheet_name, impact_category):
     if type(impact_category) == tuple:
@@ -359,7 +358,6 @@ def import_LCIA_results(file_name, flow, impact_category):
 
     # Return the imported dataframe
     return df
-
 
 # Function to seperate the midpoint and endpoint results for ReCiPe
 def recipe_dataframe_split(df):
