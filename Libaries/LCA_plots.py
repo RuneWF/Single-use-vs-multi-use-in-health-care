@@ -505,7 +505,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
             if flow in row['Category'][0]:
                 unit = row['Category'][0]
                 total = row['Value']
-                ax.plot(unit, total, 'D', color=marker_color, markersize=5, label='Total' if idx == 0 else "")
+                ax.plot(unit, total, 'D', color=marker_color, markersize=6,  mec = 'k', label='Total' if idx == 0 else "")
                 # Add the data value
                 ax.text(unit, total - marker_offset, f"{total:.2f}", 
                         ha='center', va='bottom', fontsize=10, 
@@ -516,7 +516,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color, markersize=6, label='Total'))
+    handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color,  mec = 'k', markersize=6, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .24, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10.5)
 
 
