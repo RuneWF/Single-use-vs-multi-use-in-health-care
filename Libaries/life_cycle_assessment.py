@@ -138,7 +138,7 @@ def get_database_type_flows(project_name: str, database: str, database_type: str
 
     # For loop to extract the desired flows
     for act in db:
-        if database_type in act['name']:
+        if database_type.lower() in act['name'].lower():
             flows.append(act['name'])
     
     flows.sort()
@@ -292,7 +292,6 @@ def LCA_initialization(project_name: str, database_name: str, flows: list, metho
         for idx in item:
             for n, m in idx.items():
                 FU.append({key: {m[1]: m[0]}})
-
     print('Initialization is completed')
     return FU, impact_category, plot_x_axis
 

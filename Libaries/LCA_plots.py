@@ -82,10 +82,9 @@ def flow_name_update(x, gwp, db_type, database_name):
             if 'electricity' in x:
                 x = 'Avoided energy prod.'
             if 'heating' in x:
-                x = 'Avoided heat prod.'
+                x = 'Avoided energy prod.'
             if 'Waste' in x:
                 x = 'Incineration'
-                
             if 'dishwasher' in x:
                 x = 'Disinfection'
             if 'autoclave' in x:
@@ -468,7 +467,7 @@ def category_organization(database_name):
         "Raw mat. + prod.": ["Raw mat. + prod."],
         "Use": ["Use",  "Disinfection", "Autoclave"],
         "Remanufacturing" : ["Remanufacturing"],
-        "EoL": ["Incineration", "Avoided energy prod.", "Avoided heat prod."],
+        "EoL": ["Incineration", "Avoided energy prod."],
         "Total": ["Total"]
         }
 
