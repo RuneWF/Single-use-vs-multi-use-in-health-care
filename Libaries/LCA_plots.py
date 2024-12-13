@@ -42,6 +42,7 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Raw mat. + prod.'
         if 'electricity' in x:
             x = 'Avoided energy prod.'
+
         if 'heating' in x:
             x = 'Avoided energy prod.'
         if 'market for polypropylene' in x:
@@ -644,7 +645,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             # Customize plot
             ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
             plt.title(f'Break even for the {scenario_name} {break_even_product} - {db_type}', weight = 'bold')
-            plt.xlabel('Use',  weight = 'bold')
+            plt.xlabel('Cycle(s)',  weight = 'bold')
             plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
             plt.xlim(0, amount_of_uses)
             plt.xticks(range(0, amount_of_uses, xstep))
