@@ -213,11 +213,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
         ax.set_xlim(0, len(columns_to_plot))
 
     # Specifying the direction of the text on the axis should be rotated
-    if 'endpoint' not in impact_category[0][0]:
-        plt.xticks(rotation=90)
-    else: 
-        plt.xticks(rotation=0)
-
+    plt.xticks(rotation=0)
     # Setting the legend
     ax.legend(flow_legend,bbox_to_anchor=(1.01, legend_position, .1, 0), loc="lower left",
                 mode="expand", borderaxespad=0,  ncol=1, fontsize=10.5)

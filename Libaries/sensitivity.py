@@ -53,17 +53,16 @@ def uncertainty_values(df_stack_updated, database_name):
         # Minimum and maximum lifetime use of the alu container
         lst_std = [199, 827]
 
-
         use_dct = {}
         sheet_dct  = {}
 
         for idx in df_err_min.index:
             if '2' in idx:
                 use_dct[idx] = [12,18]      # Containers in the autoclave
-                sheet_dct[idx] = [63, 71]   # Weight of the sheet without and with the protection layer
+                sheet_dct[idx] = [63/1000, 71/1000]   # Weight of the sheet without and with the protection layer
             elif '4' in idx:
                 use_dct[idx] = [8,9]        # Containers in the autoclave
-                sheet_dct[idx] = [190, 202] # Weight of the sheet without and with the protection layer
+                sheet_dct[idx] = [190/1000, 202/1000] # Weight of the sheet without and with the protection layer
             elif 'S' in idx:
                 use_dct[idx] = [9,12]       # Containers in the autoclave
             else:
@@ -75,19 +74,25 @@ def uncertainty_values(df_stack_updated, database_name):
                 for idx, row in df.iterrows():
                     # Finding the min and max values then varying the lifetime of the container
                     if 'H' not in idx and 'Disinfection' not in col and 'Autoclave' not in col:
-                        row[col] = (df_be.at[idx, col] * lst_std[sc] / 513)
+                        temp = (df_be.at[idx, col] * lst_std[sc] / 513)
                     
                     # Finding the min and max values then varying the quantity of container in the autoclave
                     elif 'Autoclave' in col:
-                        row[col] = (df_be.at[idx, col] * use_dct[idx][sc] / use_dct[idx][0])
+                        temp = (df_be.at[idx, col] * use_dct[idx][sc] / use_dct[idx][0])
 
                     # Finding the min and max values then varying without and with the protection layer for the sheet
                     elif 'H' in idx and ('Disinfection' not in col  and 'Autoclave' not in col and 'Recycling' not in col):
-                        row[col] = (df_be.at[idx, col] * sheet_dct[idx][sc] / sheet_dct[idx][1])/1000
+                        temp = (df_be.at[idx, col] * sheet_dct[idx][sc] / sheet_dct[idx][1])
                     # If none of above criterias is fulfil its set to 0
                     else:
+                        temp = 0
+                    
+                    if sc == 0 and temp != 0:
+                        row[col] = df_be.at[idx, col] - temp
+                    elif sc == 1 and temp != 0:
+                        row[col] = temp - df_be.at[idx, col]
+                    else:
                         row[col] = 0
-
             
     elif 'model' in database_name:
         life_time = [50,500]
@@ -96,7 +101,7 @@ def uncertainty_values(df_stack_updated, database_name):
 
         # Electricity in the usephase
         use_elec = ((60-4)/60*40 + 500 * 4/60)/1000
-        use_elec_var = [((60-2)/60*40 + 500 * 2/60)/1000, ((60-6)/60*40 + 500 * 6/60)/1000]
+        use_elec_var = [((60-2)/60*40 + 500 * 2/60)/1000, ((60-10)/60*40 + 500 * 10/60)/1000]
 
         # Performing the minmum and maximum calculation to extract the values
         for sc, df in enumerate(df_err):
@@ -104,19 +109,27 @@ def uncertainty_values(df_stack_updated, database_name):
                 for idx, row in df.iterrows():
                     # Finding the min and max values then varying the lifetime of the bipolar burner
                     if 'MUD' in idx and 'Disinfection' not in col and 'Autoclave' not in col:
-                        row[col] = (df_be.at[idx, col] * life_time[sc] / 250 )
+                        temp = (df_be.at[idx, col] * life_time[sc] / 250 )
                     # Finding the min and max values then varying the quantity of bipolar burner in the autoclave   
                     elif 'MUD' in idx and 'Autoclave' in col:
-                        row[col] = (df_be.at[idx, col] * autoclave[sc] /autoclave[0])
+                        temp = (df_be.at[idx, col] * autoclave[sc] /autoclave[0])
                     # Finding the min and max values then varying the quantity of bipolar burner in the cabinet washer
                     elif 'MUD' in idx and 'dis' in col.lower():
-                        row[col] = (df_be.at[idx, col] * cabinet_washer[sc] / cabinet_washer[0])
+                        temp = (df_be.at[idx, col] * cabinet_washer[sc] / cabinet_washer[0])
                     # Finding the min and max values then varying the time in use
                     elif 'use' in col.lower():
-                        row[col] = (df_be.at[idx, col] * use_elec_var[sc] / use_elec)
+                        temp = (df_be.at[idx, col] * use_elec_var[sc] / use_elec)
                     # If none of above criterias is fulfil its set to 0
                     else:
+                        temp = 0
+
+                    if sc == 0 and temp != 0:
+                        row[col] = df_be.at[idx, col] - temp
+                    elif sc == 1 and temp != 0:
+                        row[col] = temp - df_be.at[idx, col]
+                    else:
                         row[col] = 0
+                    
     else:
         print("Select either SU_vs_MU -> sterilization or dithermy -> model or create your own sensitivity values ")
 
@@ -201,5 +214,4 @@ def uncertainty_graph(variables, lib, y_axis):
     # Save and display plot
     plt.savefig(os.path.join(save_dir, f'sensitivity_analysis_{database_name}_{db_type}.jpg'), bbox_inches='tight')
     plt.show()  
-
-
+    
