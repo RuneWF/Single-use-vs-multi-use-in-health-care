@@ -4,6 +4,7 @@ import copy
 
 # Import BW25 packages
 import bw2data as bd
+import bw2io as bi
 import brightway2 as bw 
 import bw2calc as bc
 
@@ -13,38 +14,31 @@ import LCA_plots as lp
 import non_bio_co2 as nbc
 import add_plastic_sheet as aps
 import import_ecoinvent_and_databases as ied
-import reload_lib as rl
 
-def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="single use vs multi use"):
-    ied.database_setup(ecoinevnt_paths, system_path,)
-    
-    ui1 = int(input('select 1 for case1 and 2 for case2'))
-
+def initilization(path, lcia_method):
     # Specifying if it is CONSQ (consequential) or APOS
-    ui2 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
-    if ui2 == 1:
-        db_type = 'apos'
-    elif ui2 == 2:
-        db_type = 'consq'
-    elif ui2 == 3:
-        db_type = 'cut_off'
+    ui1 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
+    if ui1 == 1:
+        db_type = 'APOS'
+    elif ui1 == 2:
+        db_type = 'CONSQ'
+    elif ui1 == 3:
+        db_type = 'CUTOFF'
     
-    
-    database_project = bw_project
-    database_name = f'case{ui1}' + '_' + db_type
+    # Let the use decide the project and database
+    database_project, database_name = select_project_and_database()
 
     # Creating the flow legend
     if 'case1' in database_name:
-        flow_legend = [
-                    'H2S',
-                    'H2R',
-                    'ASC',
-                    'ASW',
-                    'H4S',
-                    'H4R',
-                    'ALC',
-                    'ALW'
-                    ]
+        flow_legend = ['H2S',
+                'H2R',
+                'ASC',
+                'ASW',
+                'H4S',
+                'H4R',
+                'ALC',
+                'ALW'
+                ]
         file_identifier = 'case1'
         
     else:
@@ -58,20 +52,54 @@ def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="s
     # Creating the saving directory for the results
     save_dir = results_folder(path+'\\results', file_identifier, db_type)
     file_name = f'{save_dir}\data_{file_identifier}_{db_type}_{lcia_method}.xlsx'
-    ui2 = int(input(f'Select 1 to choose flows based on {db_type}, else 2 for choosing them yourself'))
-    if ui2 == 1:
-        flows = get_database_type_flows(database_name)
-    elif ui2 == 2:
-        flows = get_user_specific_flows(database_name)
+    ui2 = int(input(f'Select 0 to choose flows based on {db_type}, else 1 for choosing them yourself'))
+    if ui2 == 0:
+        flows = get_database_type_flows(database_project, database_name, db_type)
+    elif ui2 == 1:
+        flows = get_user_specific_flows(database_project, database_name)
     
     print('Chosen flows:')
     for f in flows:
         print(f)
 
     initialization = [database_project, database_name, flows, lcia_method, db_type]
-    file_name_unique_process = f'{save_dir}\data_uniquie_{file_identifier}_{db_type}_{lcia_method}.xlsx'
+    file_name_unique = f'{save_dir}\data_uniquie_{file_identifier}_{db_type}_{lcia_method}.xlsx'
 
-    return flow_legend, file_name, sheet_name, save_dir, initialization, file_name_unique_process
+    return flow_legend, database_name, file_name, sheet_name, save_dir, initialization, file_name_unique, db_type
+
+def select_project_and_database():
+    projects = bd.projects.report()
+    proj_dct = {}
+    for i, proj in enumerate(projects):
+        proj_dct[proj[0]] = i
+
+    proj_input = int(input(f'Select the given number for the project wished to use\n {proj_dct}'))
+
+    chosen_proj = ''
+    for key, item in proj_dct.items():
+        if item == proj_input:
+            # bd.projects.set_current(key)
+            chosen_proj = key
+
+    bd.projects.set_current(chosen_proj)
+
+    database = bd.databases
+    db_dct = {}
+
+    for i, proj in enumerate(database):
+        db_dct[proj] = i
+
+    db_input = int(input(f'Select the given number for the database wished to use\n {db_dct}'))
+
+    chosen_db = ''
+    for key, item in db_dct.items():
+        if item == db_input:
+            # db = bd.Database(key)
+            chosen_db = key
+
+    print(f'The chosen project is {chosen_proj} and the chosen database is {chosen_db}')
+
+    return chosen_proj, chosen_db
 
 # Function to obtain the LCIA category to calculate the LCIA results
 def lcia_method(method):
@@ -104,33 +132,27 @@ def lcia_method(method):
     return all_methods
 
 # Function to extract the flows to calculate the LCIA for
-def get_database_type_flows(database: str):
+def get_database_type_flows(project_name: str, database: str, database_type: str):
     # Setting brightway to the given project
+    bd.projects.set_current(project_name)
+
+    # Specifiyng which database to use
     db = bd.Database(database)
-    # Specifiyng which database to usey
-    flow = []
-    if 'case1' in str(db):
-        for act in db:
-            temp = act['name']
-            # print(flow)
-            if ('H2' in temp  or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow:
-                flow.append(temp) 
-            elif 'alubox' in temp and '+' in temp and 'eol' not in temp.lower():
-                flow.append(temp) 
-        flow.sort()
-    elif 'case2' in str(db):
-        for act in db:
-            temp = act['name']
-            if temp == 'SUD' or temp == 'MUD':
-                flow.append(temp)
-        flow.sort()
-        flow.reverse()
+    flows = []
+
+    # For loop to extract the desired flows
+    for act in db:
+        if database_type.lower() in act['name'].lower():
+            flows.append(act['name'])
+    
+    flows.sort()
             
     # Returning the flows
-    return flow
+    return flows
 
-def get_user_specific_flows(database: str):
+def get_user_specific_flows(project_name: str, database: str):
     # Setting brightway to the given project
+    bd.projects.set_current(project_name)
 
     # Specifiyng which database to use
     db = bd.Database(database)
@@ -152,19 +174,72 @@ def get_user_specific_flows(database: str):
 
     return chosen_flows
 
+# Setting up which databases to use depending on which project is worked in
+def database_initialization(db_type, database_name, project_name):
+
+    bd.projects.set_current(project_name)
+    
+    if 'biosphere3' in bd.databases:
+        pass
+    else:
+        bi.bw2setup()
+
+    eidb = bd.Database(database_name)
+    
+    if 'CONSQ' in db_type and 'sterilization' in project_name:
+        db_eco = 'ev391consq'
+        eidb_db = bd.Database(db_eco)
+        all_acts = list(eidb) + list(eidb_db)
+
+    elif 'APOS' in db_type and 'sterilization' in project_name:
+        db_eco = 'ev391apos'
+
+        eidb_db = bd.Database(db_eco)
+        all_acts = list(eidb) + list(eidb_db)
+
+    elif 'CONSQ' in db_type and 'ofir' in project_name.lower():
+        db_eco = 'Consq EcoInvent'
+        db_ofir = 'Ananas consq'
+
+        eidb_ofir = bd.Database(db_ofir)
+        eidb_db = bd.Database(db_eco)
+        all_acts = list(eidb) + list(eidb_db) + list(eidb_ofir)
+
+    elif 'APOS' in db_type and 'ofir' in project_name.lower():
+        db_eco = 'APOS EcoInevnt'
+        db_ofir = 'Ananas consq'
+
+        eidb_ofir = bd.Database(db_ofir)
+        eidb_db = bd.Database(db_eco)
+        all_acts = list(eidb) + list(eidb_db) + list(eidb_ofir)
+
+    else:
+        db_eco = 'Consequential'
+        db_cyl = 'Cylinder'
+        db_pellet = 'Pellet'
+
+        eidb_db = bd.Database(db_eco)
+        eidb_cyl = bd.Database(db_cyl)
+        eidb_pellet = bd.Database(db_pellet)
+
+        all_acts = list(eidb) + list(eidb_db) + list(eidb_cyl) + list(eidb_pellet)
+
+    return all_acts, eidb, eidb_db
+
 # Function to initialize parameters for the LCIA calculations
-def LCA_initialization(database_name: str, flows: list, method: str) -> tuple:
-    # all_acts, eidb = database_initialization(db_type, database_name, project_name)
+def LCA_initialization(project_name: str, database_name: str, flows: list, method: str, db_type: str) -> tuple:
+    all_acts, eidb, eidb_db = database_initialization(db_type, database_name, project_name)
 
     # Setting up an empty dictionary with the flows as the key
     procces_keys = {key: None for key in flows}
 
     size = len(flows)
-    db = bd.Database(database_name)
-    for act in db:
-            for proc in range(size):
-                if act['name'] == flows[proc]:
-                    procces_keys[act['name']] = act['code']
+
+    # Obtaining all the product codes for the process'
+    for act in all_acts:
+        for proc in range(size):
+            if act['name'] == flows[proc]:
+                procces_keys[flows[proc]] = act['code']
 
     process = []
     key_counter = 0
@@ -172,9 +247,17 @@ def LCA_initialization(database_name: str, flows: list, method: str) -> tuple:
     # Obtaining all the subprocess in a list 
     for key, item in procces_keys.items():
         try:
-            process.append(db.get(item))
+            if eidb.get(item) in eidb:
+                process.append(eidb.get(item))
+            else:
+                copied_process = copy_process(item, eidb_db, eidb)
+                if copied_process:
+                    process.append(copied_process)
+                    print('Process copied')
+                else:
+                    print(f"Process with key '{item}' not found in the consequential database (eidb_consq) either.")
         except KeyError:
-            print(f"Process with key '{item}' not found in the database '{db}'")
+            print(f"Process with key '{item}' not found in the database '{eidb}'")
             process = None
         key_counter += 1
     
@@ -207,14 +290,39 @@ def LCA_initialization(database_name: str, flows: list, method: str) -> tuple:
 
 
 
-    FU = {key: {} for key in product_details.keys()}
+    FU = []
     # Creating the FU to calculate for
     for key, item in product_details.items():
         for idx in item:
             for n, m in idx.items():
-                FU[key].update({m[1]: m[0]})
+                FU.append({key: {m[1]: m[0]}})
     print('Initialization is completed')
-    return FU, impact_category
+    return FU, impact_category, plot_x_axis
+
+def copy_process(process_code: str, eidb_consq, eidb):
+    try:
+        external_process = eidb_consq.get(process_code)
+        if external_process:
+            new_process = eidb.new_activity(
+                code=external_process['code'],
+                name=external_process['name'],
+                unit=external_process['unit'],
+                location=external_process['location'],
+            )
+            for exc in external_process.exchanges():
+                new_process.new_exchange(
+                    input=exc.input,
+                    output=new_process,
+                    type=exc['type'],
+                    amount=exc['amount'],
+                    unit=exc['unit']
+                )
+            new_process.save()
+            print(f"Process '{external_process['name']}' copied from eidb_consq to eidb.")
+            return new_process
+    except Exception as e:
+        print(f"Error copying process from eidb_consq: {e}")
+    return None
 
 # saving the LCIA results to excel
 def save_LCIA_results(df, file_name, sheet_name, impact_category):
@@ -337,7 +445,7 @@ def LCIA_normalization(directory, df):
 
 # Obtaining the uniquie elements to determine the amount of colors needed for the plots
 def unique_elements_list(database_name):
-    category_mapping = lp.category_organization(database_name)
+    _, category_mapping = lp.category_organization(database_name)
     unique_elements = []
     for item in category_mapping.values():
         for ilst in item:
@@ -472,8 +580,8 @@ def redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_
     return df_unique_copy
 
 def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
-    _, database_name, flows, lcia_method, db_type = initialization
-    functional_unit, impact_category = LCA_initialization(database_name, flows, lcia_method)
+    database_project, database_name, flows, lcia_method, db_type = initialization
+    functional_unit, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
 
 
     # Ensure impact categories is a list
@@ -483,12 +591,16 @@ def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
     unique_process_index = []
     uniquie_process = []
 
-    for exc in functional_unit.values():
-        for proc in exc.keys():
-            if str(proc) not in unique_process_index:
-                unique_process_index.append(str(proc))
-                uniquie_process.append(proc)
-    
+    # for f in flows:    
+        # Find matches in functional units and calculate LCA
+    for func_dict in functional_unit:
+        for FU_item in func_dict.values():
+            # if f in FU_key:
+            for proc in FU_item.keys():
+                if f'{proc}' not in unique_process_index:
+                    unique_process_index.append(f'{proc}')
+                    uniquie_process.append(proc)
+
     unique_process_index.sort()
 
 
@@ -496,9 +608,10 @@ def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
     for upi in unique_process_index:
         for proc in uniquie_process:
             if upi == f'{proc}':
-                FU.append({proc: 1})
+                FU.append({proc : 1})
 
     user_input = ''
+    # quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name)
 
     # Check if file exists
     if os.path.isfile(file_name_unique): # https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-without-exceptions
@@ -518,7 +631,7 @@ def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
         quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name)
 
     if 'n' not in user_input.lower():
-        df_unique = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
+        df_unique_new = import_LCIA_results(file_name_unique, unique_process_index, impact_category)
 
         df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
 
@@ -526,23 +639,17 @@ def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
             for i, row in df.iterrows():
                 row[col] = []
 
-        for col, impact in enumerate(impact_categories):
-            for proc, fu in functional_unit.items():
+        for col, impact in enumerate(impact_category):
+            for fu in functional_unit:
                 for key, item in fu.items():
-                    exc = str(key)
-                    val = float(item)
-                    factor = df_unique.at[exc, impact]
+                    proc = str([p for p in item.keys()][0])
+                    val = float([v for v in item.values()][0])
+                    factor = df_unique_new.at[proc, impact]
                     impact_value = val * factor
-                    # exc = exc.replace("'","")
+                    
                     # print(key, proc, val, factor, impact_value, val*factor == impact_value)
-                    try:
-                        df.at[proc, impact].append([exc, impact_value])
-                    except ValueError:
-                        try:
-                            df.at[proc, impact].append([exc, impact_value])
-                            exc = exc.replace(")",")'")
-                        except ValueError:
-                            print(f'value error for {proc}')
+                    df.at[key, impact].append([proc, impact_value])
+        
         
             
         save_LCIA_results(df, file_name, sheet_name, impact_categories)
@@ -551,10 +658,5 @@ def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
         df = aps.add_pp_sheet_to_diathermy(path, db_type)
     else:
         df = import_LCIA_results(file_name, flows, impact_category)
-    # obtaing a shortened version of the impact categories for the plots
-    plot_x_axis_all = [0] * len(impact_category)
-    for i in range(len(plot_x_axis_all)):
-        plot_x_axis_all[i] = impact_category[i][2]
-
-
-    return df, plot_x_axis_all, impact_categories, df_unique
+    
+    return df, plot_x_axis_all, impact_categories

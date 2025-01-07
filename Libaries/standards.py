@@ -1,8 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from LCA_plots import category_organization
 
-def plot_colors(uniqie_elements, color):
+def plot_colors(database_name, color):
+    temp_dct = category_organization(database_name)
+    print(type(temp_dct))
+    uniqie_elements = []
+    for lst in temp_dct.values():
+        for item in lst:
+            uniqie_elements.append(item)
     cmap = plt.get_cmap(color)
     colors = [cmap(i) for i in np.linspace(0, 1, len(uniqie_elements))]
     return colors
