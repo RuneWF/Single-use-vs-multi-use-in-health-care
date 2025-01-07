@@ -360,7 +360,7 @@ def rearrange_dataframe_index(df):
         for idx in df.index:
             user = int(input(f'What placement shall {idx} have in the graph [{plc_lst}]'))
             idx_dct[idx] = user
-            for i, plc in enumerate(plc_lst):
+            for plc in plc_lst:
                 # removing the chosen placement
                 if user == plc:
                     plc_lst.remove(plc)
@@ -373,17 +373,16 @@ def rearrange_dataframe_index(df):
         impact_category = df.columns
         df_rearranged = pd.DataFrame(0, index=idx_lst, columns=impact_category, dtype=object)
 
-        row_counter = 0
 
         # Arranging the dataframe to the new dataframe
         for icol, col in enumerate(impact_category):
-            for idx, row in df_rearranged.iterrows():
+            for row_counter, idx in enumerate(df_rearranged.index):
                 rearranged_val = df.at[idx, col] # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.at.html#pandas.DataFrame.at
                 df_rearranged.iloc[row_counter, icol] = rearranged_val
-                row_counter += 1
+                # row_counter += 1
                 
-                if row_counter == len(idx_dct):  # Reset when all flows have been processed in the column
-                    row_counter = 0
+                # if row_counter == len(idx_dct):  # Reset when all flows have been processed in the column
+                #     row_counter = 0
         return df_rearranged
     else:
         # If rearrnge is not chosen it returns the same dataframe as inputtet
@@ -393,9 +392,7 @@ def quick_LCIA_calculator(unique_process_index, func_unit, impact_categories, fi
     if type(impact_categories) == tuple:
         impact_categories = [ic for ic in impact_categories]
     df_unique = pd.DataFrame(0, index=unique_process_index, columns=impact_categories, dtype=object)
-    # unique_process_results = {}
-    # calc_count = 1
-    # total_calculations = len(uniquie_process_dct)*len(impact_categories)
+
     print(f'Calculating for {len(impact_categories)} methods and {len(func_unit)} activities : Total calculations {len(impact_categories) * len(func_unit)}' )
     bd.calculation_setups['calc_setup'] = {'inv':func_unit, 'ia': impact_categories}
     mylca = bc.MultiLCA('calc_setup')

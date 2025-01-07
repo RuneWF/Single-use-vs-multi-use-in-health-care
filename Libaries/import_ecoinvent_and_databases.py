@@ -76,44 +76,44 @@ def database_setup(ecoinevnt_paths, system_path, bw_project="single use vs multi
                 # Print unlinked items if needed
                 print(unlinked_items)
                 print(f'{data.columns[1]} is loaded into the database')
-            else:
-                print(f'case{case +1}_{db} is in the project')
+            # else:
+            #     print(f'case{case +1}_{db} is in the project')
                     
-    ui = input('Do you want to reload some databases? [y/n]')
-    if ui == 'y':                    
-        for case, path in enumerate(system_path):    
-            db_path = path 
+    # ui = input('Do you want to reload some databases? [y/n]')
+    # if ui == 'y':                    
+    #     for case, path in enumerate(system_path):    
+    #         db_path = path 
             
-            for db in sheet_name:            
-                user_input = input(f'Do you want relaod case {case + 1} {db}? [y/n]')
-                if user_input == 'y':
-                    data = pd.read_excel(db_path, sheet_name=db)
-                    # Save the data to a temporary file that can be used by ExcelImporter
-                    temp_path = r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\temp.xlsx'
-                    data.to_excel(temp_path, index=False)
-                    # Use the temporary file with ExcelImporter
-                    imp = bi.ExcelImporter(temp_path)  # the path to your inventory excel file
-                    imp.apply_strategies()
+    #         for db in sheet_name:            
+    #             user_input = input(f'Do you want relaod case {case + 1} {db}? [y/n]')
+    #             if user_input == 'y':
+    #                 data = pd.read_excel(db_path, sheet_name=db)
+    #                 # Save the data to a temporary file that can be used by ExcelImporter
+    #                 temp_path = r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\temp.xlsx'
+    #                 data.to_excel(temp_path, index=False)
+    #                 # Use the temporary file with ExcelImporter
+    #                 imp = bi.ExcelImporter(temp_path)  # the path to your inventory excel file
+    #                 imp.apply_strategies()
 
-                    # # List of databases to match
+    #                 # # List of databases to match
 
-                    # Loop through each database and match
-                    print(f"Matching database: {db}")
-                    imp.match_database(db, fields=('name', 'unit', 'location', 'reference product'))
-                    print(f"Unlinked items after matching {db}: {list(imp.unlinked)}")
+    #                 # Loop through each database and match
+    #                 print(f"Matching database: {db}")
+    #                 imp.match_database(db, fields=('name', 'unit', 'location', 'reference product'))
+    #                 print(f"Unlinked items after matching {db}: {list(imp.unlinked)}")
 
-                    # Match without specifying a database
-                    imp.match_database(fields=('name', 'unit', 'location'))
+    #                 # Match without specifying a database
+    #                 imp.match_database(fields=('name', 'unit', 'location'))
 
-                    # Generate statistics and write results
-                    imp.statistics()
-                    imp.write_excel(only_unlinked=True)
-                    unlinked_items = list(imp.unlinked)
-                    imp.write_database()
+    #                 # Generate statistics and write results
+    #                 imp.statistics()
+    #                 imp.write_excel(only_unlinked=True)
+    #                 unlinked_items = list(imp.unlinked)
+    #                 imp.write_database()
 
-                    # Print unlinked items if needed
-                    print(unlinked_items)
-                    print(f'{data.columns[1]} is loaded into the database')
+    #                 # Print unlinked items if needed
+    #                 print(unlinked_items)
+    #                 print(f'{data.columns[1]} is loaded into the database')
                     
                         
                 

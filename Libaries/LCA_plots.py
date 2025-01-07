@@ -20,11 +20,9 @@ def flow_name_update(x, gwp, db_type, database_name):
     #     print(x)
 
     if 'case1' in database_name:
-        if f'- {db_type}' in x:
-            #print(key)
-            x = x.replace(f' - {db_type}', '')
+        
         if 'H200' in x or 'H400' in x or 'alubox (small)' in x or 'alubox (large)' in x:
-            print(x, gwp)
+            # print(x)
             x = 'Raw mat. + prod.' 
         if 'market for polypropylene' in x or 'polyethylene, high density' in x and 'waste' not in x:
             x = "Avoided mat. prod."
@@ -33,9 +31,8 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Recycling'
         if 'waste paper' in x:
             x = 'Avoided mat. prod.'
-        if 'electricity' in x or 'high voltage' in x:
-            x = 'Avoided energy prod.'
-        if 'heating' in x:
+        if 'electricity' in x or 'high voltage' in x or 'heating' in x:
+            print(x, gwp)
             x = 'Avoided energy prod.'
         if 'incineration' in x or 'waste' in x:
             x = 'Incineration'
@@ -49,7 +46,8 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Raw mat. + prod.'
         if 'cast alloy' in x:
             x = "Avoided mat. prod."
-        
+        if 'wipe' in x or 'mechanical disinfection' in x:
+            x = 'Disinfection'
 
 
     elif 'case2' in database_name or 'model' in database_name:
@@ -282,7 +280,9 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
     rec_dct = {}
     comp  = {}
     for col in df_GWP.columns:
+        
         for i, row in df_GWP.iterrows():
+            print(f'idx = {i}')
             lst_x = []
             lst_GWP = []
             gwp_tot = 0
@@ -292,18 +292,12 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
                 
                 if 'break even' in case.lower():
                     x, gwp = break_even_flow_seperation(x, gwp, db_type, database_name)
-                else:
-                    if 'alubox raw materials' in x:
-                        raw_dct[i] = abs(gwp)
-                    elif 'alubox EoL melting' in x:
-                        rec_dct[i] = abs(gwp)
+                else:   
                     
-                    
-                        
                     x, gwp = flow_name_update(x, gwp, db_type, database_name)
-                # Updating the name of process
-                if 'Avoided mat. prod.' in x and gwp > 0:
-                    gwp = -gwp
+                # # Updating the name of process
+                # if 'Avoided mat. prod.' in x and gwp > 0:
+                #     gwp = -gwp
                 lst_x.append(x)
                 lst_GWP.append(gwp)
                 gwp_tot += gwp
