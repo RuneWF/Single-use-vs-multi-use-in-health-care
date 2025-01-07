@@ -11,6 +11,8 @@ import life_cycle_assessment as lc
 import LCA_plots as lp
 import reload_lib as rl
 
+from copy import deepcopy as dc
+
 
 def break_even_initialization(path, lcia_method, lib):
     # Reloading the self made libaries to ensure they are up to date
@@ -36,6 +38,53 @@ def break_even_initialization(path, lcia_method, lib):
     variables = [database_name, df_GWP, db_type, flow_legend, save_dir]
 
     return variables
+
+def sterilization_min_max(database_type):
+    impact_category = lc.lcia_method('recipe')
+
+    database_project = 'SU_vs_MU'
+    database_name = 'sterilization'
+    flow = lc.get_database_type_flows(database_project, database_name, database_type)
+    file_name = f'C:\\Users\\ruw\\Desktop\\RA\\Single-use-vs-multi-use-in-health-care\\results\\sterilization_{database_type}\\data_sterilization_{database_type}_recipe.xlsx'
+    df = lc.import_LCIA_results(file_name, flow, impact_category)
+    df_tot, df_scaled = lc.dataframe_element_scaling(df)
+    gwp_col = df_tot.columns[1]
+    df_gwp = df_tot[gwp_col].to_frame()
+    df_sens = dc(df_gwp)
+
+    min = None
+    max = None
+    min_idx = ''
+    max_idx = ''
+
+    for col in df_sens:
+        print(col)
+        for idx, row in df_sens.iterrows():
+            val = row[col]
+            print(idx, val)
+            if '200' in idx or 'small' in idx:
+                val /= 4
+            else:
+                val /= 6
+            if max is None or min is None:
+                min = val
+                max = val
+
+            elif val < min:
+                min = val
+                min_idx = idx
+            elif val > max:
+                max = val
+                max_idx = idx
+
+
+
+    # print(min_idx, min, max_idx, max)
+    used_val = (df_tot.iloc[0, 0])
+
+    min_max_lst = [used_val/4 - min, max - used_val/4]
+    print(min_idx, min, max_idx, max)
+    return min_max_lst
 
 def uncertainty_values(df_stack_updated, database_name):
     # Calling the function to have the different activiteis split into the correct column in the dataframe
@@ -119,6 +168,8 @@ def uncertainty_values(df_stack_updated, database_name):
                     # Finding the min and max values then varying the time in use
                     elif 'use' in col.lower():
                         temp = (df_be.at[idx, col] * use_elec_var[sc] / use_elec)
+                    # elif 'MUD' in idx:
+
                     # If none of above criterias is fulfil its set to 0
                     else:
                         temp = 0
@@ -158,6 +209,11 @@ def uncertainty_graph(variables, lib, y_axis):
         for col in df_err_min.columns:
             tot_err_min += row[col]
             tot_err_max += df_err_max.at[idx, col]
+        if 'model' in database_name and 'MUD' in idx:
+            min_max_lst = sterilization_min_max(db_type)
+            tot_err_min += min_max_lst[0]
+            tot_err_max += min_max_lst[1]
+            print(min_max_lst)
         tot_err_dict[idx] = [tot_err_min, tot_err_max]
 
     df_tot_err = pd.DataFrame(tot_err_dict.values(), index=df_err_min.index, columns=['Min', 'Max'])

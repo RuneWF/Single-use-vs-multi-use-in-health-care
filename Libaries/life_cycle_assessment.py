@@ -12,20 +12,24 @@ import bw2calc as bc
 from standards import *
 import LCA_plots as lp
 import non_bio_co2 as nbc
+import add_plastic_sheet as aps
+import import_ecoinvent_and_databases as ied
 
 def initilization(path, lcia_method):
     # Specifying if it is CONSQ (consequential) or APOS
-    ui1 = int(input('select 0 for APOS and 1 for CONSQ'))
-    if ui1 == 0:
+    ui1 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
+    if ui1 == 1:
         db_type = 'APOS'
-    elif ui1 == 1:
+    elif ui1 == 2:
         db_type = 'CONSQ'
+    elif ui1 == 3:
+        db_type = 'CUTOFF'
     
     # Let the use decide the project and database
     database_project, database_name = select_project_and_database()
 
     # Creating the flow legend
-    if 'sterilization' in database_name:
+    if 'case1' in database_name:
         flow_legend = ['H2S',
                 'H2R',
                 'ASC',
@@ -35,11 +39,11 @@ def initilization(path, lcia_method):
                 'ALC',
                 'ALW'
                 ]
-        file_identifier = 'sterilization'
+        file_identifier = 'case1'
         
     else:
         flow_legend = ['SUD', 'MUD']
-        file_identifier = 'diathermy'
+        file_identifier = 'case2'
 
     # Specifying the file name and sheet name
     
@@ -441,9 +445,9 @@ def LCIA_normalization(directory, df):
 
 # Obtaining the uniquie elements to determine the amount of colors needed for the plots
 def unique_elements_list(database_name):
-    categories, category_mapping = lp.category_organization(database_name)
+    _, category_mapping = lp.category_organization(database_name)
     unique_elements = []
-    for key, item in category_mapping.items():
+    for item in category_mapping.values():
         for ilst in item:
             unique_elements.append(ilst)
 
@@ -575,7 +579,7 @@ def redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_
         
     return df_unique_copy
 
-def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
+def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
     database_project, database_name, flows, lcia_method, db_type = initialization
     functional_unit, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
 
@@ -590,7 +594,7 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     # for f in flows:    
         # Find matches in functional units and calculate LCA
     for func_dict in functional_unit:
-        for FU_key, FU_item in func_dict.items():
+        for FU_item in func_dict.values():
             # if f in FU_key:
             for proc in FU_item.keys():
                 if f'{proc}' not in unique_process_index:
@@ -645,9 +649,14 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
                     
                     # print(key, proc, val, factor, impact_value, val*factor == impact_value)
                     df.at[key, impact].append([proc, impact_value])
+        
+        
+            
         save_LCIA_results(df, file_name, sheet_name, impact_categories)
 
+    if 'model' in database_name:
+        df = aps.add_pp_sheet_to_diathermy(path, db_type)
+    else:
+        df = import_LCIA_results(file_name, flows, impact_category)
     
-    df = import_LCIA_results(file_name, flows, impact_category)
-
     return df, plot_x_axis_all, impact_categories

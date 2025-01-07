@@ -14,48 +14,30 @@ importlib.reload(lc)
 # Function to update the flow name and simplify them
 def flow_name_update(x, gwp, db_type, database_name):
     x_og = x
-    if 'Ananas consq' in database_name or 'sterilization' in database_name:
+    # x_lst = []
+    # if x not in x_lst:
+    #     x_lst.append(x)
+    #     print(x)
+
+    if 'case1' in database_name:
         if f'- {db_type}' in x:
             #print(key)
             x = x.replace(f' - {db_type}', '')
-        
-        if 'alubox' in x:       
-            x = x.replace('alubox ', '')
-            if 'avoided' in x:
-                x = 'Avoided mat. prod.'
-                if gwp < 0:
-                    gwp = -gwp
-            if 'raw materials' in x:
-                x = 'Raw mat. + prod.' 
-                if gwp < 0:
-                    gwp = -gwp 
-            if 'production' in x:
-                x = 'Raw mat. + prod.' 
-            if 'EoL' in x:
-                x = 'Recycling'
-                # print(x_og,gwp)
-        if 'recycling' in x:
-                x = 'Recycling'
-        if 'waste paper to pulp' in x:
+        if 'H200' in x or 'H400' in x or 'alubox (small)' in x or 'alubox (large)' in x:
+            print(x, gwp)
+            x = 'Raw mat. + prod.' 
+        if 'market for polypropylene' in x or 'polyethylene, high density' in x and 'waste' not in x:
+            x = "Avoided mat. prod."
+        if 'recyc' in x.lower() or 'aluminium scrap' in x:
+            # print(x, gwp)
+            x = 'Recycling'
+        if 'waste paper' in x:
             x = 'Avoided mat. prod.'
-        if 'sheet manufacturing' in x:
-            x = 'Raw mat. + prod.'
-        if 'electricity' in x:
+        if 'electricity' in x or 'high voltage' in x:
             x = 'Avoided energy prod.'
-
         if 'heating' in x:
             x = 'Avoided energy prod.'
-        if 'market for polypropylene' in x:
-            if gwp < 0:
-                x = 'Avoided mat. prod.'
-            else:
-                x = 'Raw mat. + prod.'
-        if 'PE granulate' in x:
-            if gwp < 0:
-                x = 'Avoided mat. prod.'
-            else:
-                x = 'Raw mat. + prod.'
-        if 'no Energy Recovery' in x or 'incineration' in x:
+        if 'incineration' in x or 'waste' in x:
             x = 'Incineration'
         if 'board box' in x or 'packaging film' in x:
             x = 'Raw mat. + prod.'
@@ -63,13 +45,14 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = 'Autoclave'
         if 'transport' in x:
             x = 'Raw mat. + prod.'
-        if 'cabinet' in x or 'wipe' in x:
-            x = 'Disinfection'
         if 'polysulfone' in x:
             x = 'Raw mat. + prod.'
+        if 'cast alloy' in x:
+            x = "Avoided mat. prod."
+        
 
 
-    elif 'Lobster' in database_name or 'model' in database_name:
+    elif 'case2' in database_name or 'model' in database_name:
             if f'- {db_type}' in x:
                 x = x.replace(f' - {db_type}', '')
             if 'erbe' in x:
@@ -92,6 +75,25 @@ def flow_name_update(x, gwp, db_type, database_name):
                 x = 'Autoclave'
             if 'raw mat' in x or 'packaging' in x or ('manufacturing' in x and 'remanu' not in x.lower()) or 'transport' in x.lower() :
                x = 'Raw mat. + prod.'
+            if 'sheet manufacturing' in x:
+                x = 'Raw mat. + prod.'
+            if 'electricity' in x:
+                x = 'Avoided energy prod.'
+
+            if 'heating' in x:
+                x = 'Avoided energy prod.'
+            if 'market for polypropylene' in x:
+                if gwp < 0:
+                    x = 'Avoided mat. prod.'
+                else:
+                    x = 'Raw mat. + prod.'
+            if 'PE granulate' in x:
+                if gwp < 0:
+                    x = 'Avoided mat. prod.'
+                else:
+                    x = 'Raw mat. + prod.'
+            if 'no Energy Recovery' in x or 'incineration' in x:
+                x = 'Incineration'
 
     return x, gwp
 
@@ -173,7 +175,25 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             if 'raw mat' in x or 'packaging' in x or ('manufacturing' in x and 'remanu' not in x.lower()) or 'transport' in x.lower():
                x = 'Raw mat. + prod.'
 
+            if 'sheet manufacturing' in x:
+                x = 'Raw mat. + prod.'
+            if 'electricity' in x:
+                x = 'Avoided energy prod.'
 
+            if 'heating' in x:
+                x = 'Avoided energy prod.'
+            if 'market for polypropylene' in x:
+                if gwp < 0:
+                    x = 'Avoided mat. prod.'
+                else:
+                    x = 'Raw mat. + prod.'
+            if 'PE granulate' in x:
+                if gwp < 0:
+                    x = 'Avoided mat. prod.'
+                else:
+                    x = 'Raw mat. + prod.'
+            if 'no Energy Recovery' in x or 'incineration' in x:
+                x = 'Incineration'
     return x, gwp
 
 # Function to create the scaled FU plot
@@ -448,9 +468,8 @@ def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
         print('The x-axis and GWP values have different sizes')
 
 def category_organization(database_name):
-    categories = ["Raw mat. + prod.", "Use", "Transport", "EoL", "Total"]
 
-    if 'Ananas consq' in database_name or 'sterilization' in database_name:
+    if 'case1' in database_name :
         category_mapping = {
         "Raw mat. + prod.": ["Raw mat. + prod."],
         "Use": ["Disinfection", "Autoclave"],
@@ -459,16 +478,15 @@ def category_organization(database_name):
         "Total": ["Total"]
         }
     
-    elif 'Lobster' in database_name or 'model' in database_name:
+    elif 'case2' in database_name or 'model' in database_name:
         category_mapping = {
         "Raw mat. + prod.": ["Raw mat. + prod."],
         "Use": ["Use",  "Disinfection", "Autoclave"],
-        "Remanufacturing" : ["Remanufacturing"],
-        "EoL": ["Incineration", "Avoided energy prod."],
+        "EoL": ["Incineration", "Avoided energy prod.", "Avoided mat. prod."],
         "Total": ["Total"]
         }
 
-    return categories, category_mapping        
+    return category_mapping        
 
 # Function to plot the global warming potentials showing the contribution of each life stage
 def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
@@ -624,7 +642,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                             for u in range(1, amount_of_uses + 1)]
 
             # Plot results
-            fig, ax = plt.subplots(figsize=(10, 6))
+            _, ax = plt.subplots(figsize=(10, 6))
 
             
 
@@ -694,7 +712,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
         plt.title(f'Break even for the bipolar burner {break_even_product} - {db_type}', weight = 'bold')
-        plt.xlabel('Use',  weight = 'bold')
+        plt.xlabel('Cycle(s)',  weight = 'bold')
         plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
         plt.xlim(0, amount_of_uses)
         plt.xticks(range(0, amount_of_uses +1, xstep))
