@@ -9,6 +9,60 @@ import pandas as pd
 #                    'ev391cutoff' : r"C:\Users\ruw\Downloads\ecoinvent 3.9.1_cutoff_ecoSpold02\datasets"}
 # system_path = [r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\case1.xlsx', 
 #                 r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\case2.xlsx']
+def import_excel_database_to_brightway(data, db):
+    # Save the data to a temporary file that can be used by ExcelImporter
+    temp_path = r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\temp.xlsx'
+    data.to_excel(temp_path, index=False)
+    # Use the temporary file with ExcelImporter
+    imp = bi.ExcelImporter(temp_path)  # the path to your inventory excel file
+    imp.apply_strategies()
+
+    # # List of databases to match
+
+    # Loop through each database and match
+    print(f"Matching database: {db}")
+    imp.match_database(db, fields=('name', 'unit', 'location', 'reference product'))
+    print(f"Unlinked items after matching {db}: {list(imp.unlinked)}")
+
+    # Match without specifying a database
+    imp.match_database(fields=('name', 'unit', 'location'))
+
+    # Generate statistics and write results
+    imp.statistics()
+    imp.write_excel(only_unlinked=True)
+    unlinked_items = list(imp.unlinked)
+    imp.write_database()
+
+    # Print unlinked items if needed
+    print(unlinked_items)
+    print(f'{data.columns[1]} is loaded into the database')
+    import_excel_database_to_brightway.has_been_called = True
+   
+
+def reload_database(sheet_name, system_path):
+    user_input = input('Do you want to reload some or all the databases? [y/n or a for all]')
+    if user_input.lower() == 'y':
+        for case, path in enumerate(system_path):    
+            db_path = path 
+            for db in sheet_name:
+                # print(idx+1, db)
+                # Read the Excel file
+                data = pd.read_excel(db_path, sheet_name=db)
+                user_input2 = input(f'Reload case{case+1}_{db}? [y/n]')
+                if user_input2.lower() == 'y':
+                    import_excel_database_to_brightway(data, db)
+    elif user_input.lower() == 'a':
+        for case, path in enumerate(system_path):    
+            db_path = path 
+            for db in sheet_name:
+
+                data = pd.read_excel(db_path, sheet_name=db)
+                import_excel_database_to_brightway(data, db)
+    elif user_input.lower() == 'n':
+         print('You selected to not reload')
+    else:
+         print('Invalid argument, try again')
+         reload_database(sheet_name, system_path)
 
 def database_setup(ecoinevnt_paths, system_path, bw_project="single use vs multi use", sheet_name = ['ev391apos', 'ev391consq', 'ev391cutoff']):
     bd.projects.set_current(bw_project)
@@ -41,79 +95,19 @@ def database_setup(ecoinevnt_paths, system_path, bw_project="single use vs multi
 
     
    
-    for case, path in enumerate(system_path):    
+    for path in system_path:    
         db_path = path 
         for db in sheet_name:
             # print(idx+1, db)
             # Read the Excel file
             data = pd.read_excel(db_path, sheet_name=db)
-            # Save the data to a temporary file that can be used by ExcelImporter
-            temp_path = r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\temp.xlsx'
-            data.to_excel(temp_path, index=False)
             
+            import_excel_database_to_brightway.has_been_called = False  
             if data.columns[1] not in bd.databases:
-
-                # Use the temporary file with ExcelImporter
-                imp = bi.ExcelImporter(temp_path)  # the path to your inventory excel file
-                imp.apply_strategies()
-
-                # # List of databases to match
-
-                # Loop through each database and match
-                print(f"Matching database: {db}")
-                imp.match_database(db, fields=('name', 'unit', 'location', 'reference product'))
-                print(f"Unlinked items after matching {db}: {list(imp.unlinked)}")
-
-                # Match without specifying a database
-                imp.match_database(fields=('name', 'unit', 'location'))
-
-                # Generate statistics and write results
-                imp.statistics()
-                imp.write_excel(only_unlinked=True)
-                unlinked_items = list(imp.unlinked)
-                imp.write_database()
-
-                # Print unlinked items if needed
-                print(unlinked_items)
-                print(f'{data.columns[1]} is loaded into the database')
-            # else:
-            #     print(f'case{case +1}_{db} is in the project')
-                    
-    # ui = input('Do you want to reload some databases? [y/n]')
-    # if ui == 'y':                    
-    #     for case, path in enumerate(system_path):    
-    #         db_path = path 
-            
-    #         for db in sheet_name:            
-    #             user_input = input(f'Do you want relaod case {case + 1} {db}? [y/n]')
-    #             if user_input == 'y':
-    #                 data = pd.read_excel(db_path, sheet_name=db)
-    #                 # Save the data to a temporary file that can be used by ExcelImporter
-    #                 temp_path = r'C:\Users\ruw\Desktop\RA\Single-use-vs-multi-use-in-health-care\Data\databases\temp.xlsx'
-    #                 data.to_excel(temp_path, index=False)
-    #                 # Use the temporary file with ExcelImporter
-    #                 imp = bi.ExcelImporter(temp_path)  # the path to your inventory excel file
-    #                 imp.apply_strategies()
-
-    #                 # # List of databases to match
-
-    #                 # Loop through each database and match
-    #                 print(f"Matching database: {db}")
-    #                 imp.match_database(db, fields=('name', 'unit', 'location', 'reference product'))
-    #                 print(f"Unlinked items after matching {db}: {list(imp.unlinked)}")
-
-    #                 # Match without specifying a database
-    #                 imp.match_database(fields=('name', 'unit', 'location'))
-
-    #                 # Generate statistics and write results
-    #                 imp.statistics()
-    #                 imp.write_excel(only_unlinked=True)
-    #                 unlinked_items = list(imp.unlinked)
-    #                 imp.write_database()
-
-    #                 # Print unlinked items if needed
-    #                 print(unlinked_items)
-    #                 print(f'{data.columns[1]} is loaded into the database')
-                    
-                        
-                
+                import_excel_database_to_brightway(data, db)
+    
+    if import_excel_database_to_brightway.has_been_called is False:
+        print(import_excel_database_to_brightway.has_been_called)
+        reload_database(sheet_name, system_path)
+        
+    

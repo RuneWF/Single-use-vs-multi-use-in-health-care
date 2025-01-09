@@ -345,8 +345,37 @@ def unique_elements_list(database_name):
 
     return unique_elements
 
+def rearrange_dataframe_index(df, database):
+    idx_dct = {}
+    idx_lst = df.index
+    if 'case1' in database:
+        plc_lst = [1, 0, 5, 4, 6, 7, 2, 3]
+
+        # Letting the user decide the new order of the index
+        for plc, idx in enumerate(df.index):
+            idx_dct[idx] = plc_lst[plc]
+            
+        # Creating the new index list
+        idx_lst = [''] * len(idx_dct)
+        for key, item in idx_dct.items():
+            idx_lst[item] = key
+
+        impact_category = df.columns
+        df_rearranged = pd.DataFrame(0, index=idx_lst, columns=impact_category, dtype=object)
+
+
+        # Arranging the dataframe to the new dataframe
+        for icol, col in enumerate(impact_category):
+            for row_counter, idx in enumerate(df_rearranged.index):
+                rearranged_val = df.at[idx, col] # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.at.html#pandas.DataFrame.at
+                df_rearranged.iloc[row_counter, icol] = rearranged_val
+        return df_rearranged
+    else:
+        # If rearrnge is not chosen it returns the same dataframe as inputtet
+        return df
+
 # Function to rearrange the data in the dataframe
-def rearrange_dataframe_index(df):
+def rearrange_dataframe_index_user_specific(df):
     rearrange = True if input('Do you want to rearrange the data? [y/n]') == 'y' else False
     # Checking if rearrange is chosen
     if rearrange == True:

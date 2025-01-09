@@ -1,5 +1,4 @@
 # Import libaries
-import re
 import pandas as pd
 import matplotlib.pyplot as plt 
 import numpy as np
@@ -14,18 +13,18 @@ import reload_lib as rl
 from copy import deepcopy as dc
 
 
-def break_even_initialization(path, lcia_method, lib):
+def break_even_initialization(path, lcia_method, lib, ecoinevnt_paths, system_path):
     # Reloading the self made libaries to ensure they are up to date
     rl.reload_lib(lib)
 
     # Extracting the variables used
-    flow_legend, database_name, file_path, _, save_dir, initialization, _, db_type = lc.initilization(path, lcia_method)
+    flow_legend, file_name, _, save_dir, initialization, _ = lc.initilization(path, lcia_method, ecoinevnt_paths, system_path)
     impact_category = lc.lcia_method(lcia_method)
 
     # Importing the results data frame
-    df = lc.import_LCIA_results(file_path, initialization[2], impact_category)
+    df = lc.import_LCIA_results(file_name, initialization[2], impact_category)
 
-    df_rearranged = lc.rearrange_dataframe_index(df)
+    df_rearranged = lc.rearrange_dataframe_index(df, database=initialization[1])
     if 'recipe' in lcia_method:
         df_res, df_endpoint = lc.recipe_dataframe_split(df_rearranged)
     else:
@@ -35,7 +34,7 @@ def break_even_initialization(path, lcia_method, lib):
     df_col = [df_res.columns[1]]
     df_GWP = df_res[df_col]
 
-    variables = [database_name, df_GWP, db_type, flow_legend, save_dir]
+    variables = [initialization[1], df_GWP, initialization[-1], flow_legend, save_dir]
 
     return variables
 
@@ -97,7 +96,7 @@ def uncertainty_values(df_stack_updated, database_name):
     df_err = [df_err_min, df_err_max]
 
     # Finding the minimimum and maximum value of the sensitivity analysis
-    if 'sterilization' in database_name:
+    if 'case1' in database_name:
 
         # Minimum and maximum lifetime use of the alu container
         lst_std = [199, 827]
@@ -143,7 +142,7 @@ def uncertainty_values(df_stack_updated, database_name):
                     else:
                         row[col] = 0
             
-    elif 'model' in database_name:
+    elif 'case2' in database_name:
         life_time = [50,500]
         autoclave = [36, 48]
         cabinet_washer = [32, 48]
@@ -186,9 +185,12 @@ def uncertainty_values(df_stack_updated, database_name):
 
     # Obtaining the colors
     colors_lst = [c for c in df_be.columns]
-    colors = s.plot_colors(colors_lst,'turbo')
+    colors = s.plot_colors(database_name,'turbo')
 
     return df_err_min, df_err_max, colors
+
+
+
 
 def uncertainty_graph(variables, lib, y_axis):
     rl.reload_lib(lib)
@@ -258,9 +260,9 @@ def uncertainty_graph(variables, lib, y_axis):
     plt.yticks(np.arange(y_min, y_max + y_offset, step=y_step))
     plt.ylim(y_min, y_max + y_offset)
     plt.ylabel("Global Warming Potential [kg CO$_2$e/FU]", fontsize=10, weight='bold')  # Label for y-axis
-    if 'model' in database_name.lower():
+    if 'case2' in database_name.lower():
         plt.title(f"Sensitivity analysis of electrosurgery for total GWP impact for 1 FU - {db_type}", weight='bold')  # Add title
-    elif 'steril' in database_name.lower():
+    elif 'case1' in database_name.lower():
         plt.title(f"Sensitivity analysis of sterilization for total GWP impact for 1 FU - {db_type}", weight='bold')
     else:
         plt.title(f"Sensitivity analysis of sterilization for total GWP impact for 1 FU - {db_type}", weight='bold')
@@ -271,3 +273,4 @@ def uncertainty_graph(variables, lib, y_axis):
     plt.savefig(os.path.join(save_dir, f'sensitivity_analysis_{database_name}_{db_type}.jpg'), bbox_inches='tight')
     plt.show()  
     
+    return df_tot_err, df_err_min, df_err_max

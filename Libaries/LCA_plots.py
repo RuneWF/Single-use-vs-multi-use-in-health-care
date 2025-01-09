@@ -25,14 +25,16 @@ def flow_name_update(x, gwp, db_type, database_name):
             # print(x)
             x = 'Raw mat. + prod.' 
         if 'market for polypropylene' in x or 'polyethylene, high density' in x and 'waste' not in x:
+            # print(f'Plastic {x} = {gwp}')
             x = "Avoided mat. prod."
         if 'recyc' in x.lower() or 'aluminium scrap' in x:
+            # print(f'recycling {x} = {gwp}')
             # print(x, gwp)
             x = 'Recycling'
         if 'waste paper' in x:
-            x = 'Avoided mat. prod.'
+            # print(f'paper {x} = {gwp}')
+            x = 'Recycling'
         if 'electricity' in x or 'high voltage' in x or 'heating' in x:
-            print(x, gwp)
             x = 'Avoided energy prod.'
         if 'incineration' in x or 'waste' in x:
             x = 'Incineration'
@@ -45,98 +47,66 @@ def flow_name_update(x, gwp, db_type, database_name):
         if 'polysulfone' in x:
             x = 'Raw mat. + prod.'
         if 'cast alloy' in x:
+            # print(f'Cast alloy {x} = {gwp}')
             x = "Avoided mat. prod."
         if 'wipe' in x or 'mechanical disinfection' in x:
             x = 'Disinfection'
 
 
     elif 'case2' in database_name or 'model' in database_name:
-            if f'- {db_type}' in x:
-                x = x.replace(f' - {db_type}', '')
-            if 'erbe' in x:
-                x = 'Use'
-            if 'remanu' in x.lower():
-                x = 'Remanufacturing'
-            # if 'board box' in x or 'packaging' in x:
-            #     x = 'Packaging'
-            if 'waste paper to pulp' in x:
-                x = 'Avoided mat. prod.'
-            if 'electricity' in x:
-                x = 'Avoided energy prod.'
-            if 'heating' in x:
-                x = 'Avoided energy prod.'
-            if 'Waste' in x:
-                x = 'Incineration'
-            if 'dishwasher' in x:
-                x = 'Disinfection'
-            if 'autoclave' in x:
-                x = 'Autoclave'
-            if 'raw mat' in x or 'packaging' in x or ('manufacturing' in x and 'remanu' not in x.lower()) or 'transport' in x.lower() :
-               x = 'Raw mat. + prod.'
-            if 'sheet manufacturing' in x:
-                x = 'Raw mat. + prod.'
-            if 'electricity' in x:
-                x = 'Avoided energy prod.'
+        if 'H200' in x:
+            # print(x)
+            x = 'Ster. consumables' 
+        if 'autoclave' in x.lower():
+            x = 'Ster. autoclave' 
+        if ('MUD' in x or 'SUD' in x) and 'eol' not in x or 'transport' in x or 'scalpel' in x:
+            x = "Raw mat. + prod."
+        if 'recyc' in x.lower() or 'aluminium scrap' in x:
+            # print(x, gwp)
+            x = 'Recycling'
+        if 'waste paper' in x:
+            x = 'Avoided mat. prod.'
+        if 'electricity' in x or 'high voltage' in x or 'heating' in x:
+            x = 'Avoided energy prod.'
+        if 'incineration' in x or 'waste' in x:
+            x = 'Incineration'
+        if 'board box' in x or 'packaging film' in x:
+            x = 'Raw mat. + prod.'
 
-            if 'heating' in x:
-                x = 'Avoided energy prod.'
-            if 'market for polypropylene' in x:
-                if gwp < 0:
-                    x = 'Avoided mat. prod.'
-                else:
-                    x = 'Raw mat. + prod.'
-            if 'PE granulate' in x:
-                if gwp < 0:
-                    x = 'Avoided mat. prod.'
-                else:
-                    x = 'Raw mat. + prod.'
-            if 'no Energy Recovery' in x or 'incineration' in x:
-                x = 'Incineration'
+        if 'wipe' in x or 'mechanical disinfection' in x:
+            x = 'Disinfection'
+        if 'eol' in x:
+            x = 'Incineration'
+        if 'use' in x:
+            x = 'Use'
+          
 
     return x, gwp
 
 def break_even_flow_seperation(x, gwp, db_type, database_name):
-    # print(x, gwp, database_name)
-    if 'Ananas consq' in database_name or 'sterilization' in database_name:
-        if f'- {db_type}' in x:
-            #print(key)
-            x = x.replace(f' - {db_type}', '')
-        x_og = x
-        if 'alubox' in x:       
-            x = x.replace('alubox ', '')
-            if 'avoided' in x:
-                x = 'Avoided mat. prod.'
-                if gwp < 0:
-                    gwp = -gwp
-            if 'raw materials' in x:
-                x = 'Raw mat. + prod.' 
-                if gwp < 0:
-                    gwp = -gwp 
-            if 'production' in x:
-                x = 'Raw mat. + prod.' 
-            if 'EoL' in x:
-                x = 'Recycling'
-        if 'recycling' in x:
-                x = 'Recycling'
-        if 'waste paper to pulp' in x:
-            x = 'Avoided mat. prod.'
-        if 'sheet manufacturing' in x:
-            x = 'Raw mat. + prod.'
-        if 'electricity' in x:
+    x_og = x
+    # x_lst = []
+    # if x not in x_lst:
+    #     x_lst.append(x)
+    #     print(x)
+
+    if 'case1' in database_name:
+        if 'H200' in x or 'H400' in x or 'alubox (small)' in x or 'alubox (large)' in x:
+            # print(x)
+            x = 'Raw mat. + prod.' 
+        if 'market for polypropylene' in x or 'polyethylene, high density' in x and 'waste' not in x:
+            # print(f'Plastic {x} = {gwp}')
+            x = "Avoided mat. prod."
+        if 'recyc' in x.lower() or 'aluminium scrap' in x:
+            # print(f'recycling {x} = {gwp}')
+            # print(x, gwp)
+            x = 'Recycling'
+        if 'waste paper' in x:
+            # print(f'paper {x} = {gwp}')
+            x = 'Recycling'
+        if 'electricity' in x or 'high voltage' in x or 'heating' in x:
             x = 'Avoided energy prod.'
-        if 'heating' in x:
-            x = 'Avoided energy prod.'
-        if 'market for polypropylene' in x:
-            if gwp < 0:
-                x = 'Avoided mat. prod.'
-            else:
-                x = 'Raw mat. + prod.'
-        if 'PE granulate' in x:
-            if gwp < 0:
-                x = 'Avoided mat. prod.'
-            else:
-                x = 'Raw mat. + prod.'
-        if 'no Energy Recovery' in x or 'incineration' in x:
+        if 'incineration' in x or 'waste' in x:
             x = 'Incineration'
         if 'board box' in x or 'packaging film' in x:
             x = 'Raw mat. + prod.'
@@ -144,54 +114,43 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
             x = 'Autoclave'
         if 'transport' in x:
             x = 'Raw mat. + prod.'
-        if 'cabinet' in x or 'wipe' in x:
-            x = 'Disinfection'
         if 'polysulfone' in x:
             x = 'Raw mat. + prod.'
+        if 'cast alloy' in x:
+            # print(f'Cast alloy {x} = {gwp}')
+            x = "Avoided mat. prod."
+        if 'wipe' in x or 'mechanical disinfection' in x:
+            x = 'Disinfection'
 
-    elif 'Lobster' in database_name or 'model' in database_name:
-            if f'- {db_type}' in x:
-                x = x.replace(f' - {db_type}', '')
-            if 'erbe' in x:
-                x = 'Use'
-            if 'remanu' in x.lower():
-                x = 'Remanufacturing'
-            # if 'board box' in x or 'packaging' in x:
-            #     x = 'Packaging'
-            if 'waste paper to pulp' in x:
-                x = 'Avoided mat. prod.'
-            if 'electricity' in x:
-                x = 'Avoided energy prod.'
-            if 'heating' in x:
-                x = 'Avoided heat prod.'
-            if 'Waste' in x:
-                x = 'Incineration'
-            if 'dishwasher' in x:
-                x = 'Disinfection'
-            if 'autoclave' in x:
-                x = 'Autoclave'
-            if 'raw mat' in x or 'packaging' in x or ('manufacturing' in x and 'remanu' not in x.lower()) or 'transport' in x.lower():
-               x = 'Raw mat. + prod.'
 
-            if 'sheet manufacturing' in x:
-                x = 'Raw mat. + prod.'
-            if 'electricity' in x:
-                x = 'Avoided energy prod.'
+    elif 'case2' in database_name or 'model' in database_name:
+        if 'H200' in x:
+            # print(x)
+            x = 'Ster. consumables' 
+        if 'autoclave' in x.lower():
+            x = 'Ster. autoclave'
+        if ('MUD' in x or 'SUD' in x) and 'eol' not in x or 'transport' in x or 'scalpel' in x:
+            x = "Raw mat. + prod."
+        if 'recyc' in x.lower() or 'aluminium scrap' in x:
+            # print(x, gwp)
+            x = 'Recycling'
+        if 'waste paper' in x:
+            x = 'Avoided mat. prod.'
+        if 'electricity' in x or 'high voltage' in x or 'heating' in x:
+            x = 'Avoided energy prod.'
+        if 'incineration' in x or 'waste' in x:
+            x = 'Incineration'
+        if 'board box' in x or 'packaging film' in x:
+            x = 'Raw mat. + prod.'
 
-            if 'heating' in x:
-                x = 'Avoided energy prod.'
-            if 'market for polypropylene' in x:
-                if gwp < 0:
-                    x = 'Avoided mat. prod.'
-                else:
-                    x = 'Raw mat. + prod.'
-            if 'PE granulate' in x:
-                if gwp < 0:
-                    x = 'Avoided mat. prod.'
-                else:
-                    x = 'Raw mat. + prod.'
-            if 'no Energy Recovery' in x or 'incineration' in x:
-                x = 'Incineration'
+        if 'wipe' in x or 'mechanical disinfection' in x:
+            x = 'Disinfection'
+        if 'eol' in x:
+            x = 'Incineration'
+        if 'use' in x:
+            x = 'Use'
+          
+
     return x, gwp
 
 # Function to create the scaled FU plot
@@ -209,7 +168,7 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     index_list = list(df_scaled.index.values)
 
     # Plotting
-    fig, ax = plt.subplots(figsize=(12, 6))
+    _, ax = plt.subplots(figsize=(12, 6))
 
     bar_width = 1/(len(index_list) + 1) 
     index = np.arange(len(columns_to_plot))
@@ -223,9 +182,9 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=14)
     ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
     ax.set_xticklabels(plot_x_axis, fontsize=10)
-    if 'sterilization' in database_name:
+    if 'case1' in database_name:
         ax.set_xlim(-0.2, len(columns_to_plot))
-    elif 'model' in database_name:
+    elif 'case2' in database_name:
         ax.set_xlim(-0.35, len(columns_to_plot) -0.3)
     else:
         ax.set_xlim(0, len(columns_to_plot))
@@ -282,7 +241,7 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
     for col in df_GWP.columns:
         
         for i, row in df_GWP.iterrows():
-            print(f'idx = {i}')
+            # print(f'idx = {i}')
             lst_x = []
             lst_GWP = []
             gwp_tot = 0
@@ -290,11 +249,11 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
                 x = lst[0]
                 gwp = lst[1]
                 
-                if 'break even' in case.lower():
-                    x, gwp = break_even_flow_seperation(x, gwp, db_type, database_name)
-                else:   
+                # if 'break even' in case.lower():
+                #     x, gwp = break_even_flow_seperation(x, gwp, db_type, database_name)
+                # else:   
                     
-                    x, gwp = flow_name_update(x, gwp, db_type, database_name)
+                x, gwp = flow_name_update(x, gwp, db_type, database_name)
                 # # Updating the name of process
                 # if 'Avoided mat. prod.' in x and gwp > 0:
                 #     gwp = -gwp
@@ -475,8 +434,8 @@ def category_organization(database_name):
     elif 'case2' in database_name or 'model' in database_name:
         category_mapping = {
         "Raw mat. + prod.": ["Raw mat. + prod."],
-        "Use": ["Use",  "Disinfection", "Autoclave"],
-        "EoL": ["Incineration", "Avoided energy prod.", "Avoided mat. prod."],
+        "Use": ["Use",  "Disinfection",  "Ster. consumables", "Ster. autoclave"],
+        "EoL": ["Incineration", "Avoided energy prod."],
         "Total": ["Total"]
         }
 
@@ -542,7 +501,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
 
 def break_even_orginization(df_be, database_name):
     df_be_copy = dc(df_be)
-    if 'sterilization' in database_name:
+    if 'case1' in database_name:
         wipe_small_container = df_be.at['ASW', 'Disinfection']
         wipe_large_container = df_be.at['ALW', 'Disinfection']
 
@@ -570,11 +529,22 @@ def break_even_orginization(df_be, database_name):
 
         allocate_inc_L = wipe_large_inc - cabinet_large_inc
 
+        # Recycling
+        cabinet_small_rec = df_be.at['ASC', 'Recycling']
+        wipe_small_rec = df_be.at['ASW', 'Recycling']
+
+        allocate_rec_S = wipe_small_rec - cabinet_small_rec
+
+        cabinet_large_rec = df_be.at['ALC', 'Recycling']
+        wipe_large_rec = df_be.at['ALW', 'Recycling']
+
+        allocate_rec_L = wipe_large_rec - cabinet_large_rec
+
         # Calculating the new sums
 
-        wipe_small_container_new = wipe_small_container + allocate_avoided_energy_S + allocate_inc_S
+        wipe_small_container_new = wipe_small_container + allocate_avoided_energy_S + allocate_inc_S + allocate_rec_S
 
-        wipe_large_container_new = wipe_large_container + allocate_avoided_energy_L  + allocate_inc_L
+        wipe_large_container_new = wipe_large_container + allocate_avoided_energy_L  + allocate_inc_L +allocate_rec_L
 
 
         df_be_copy.at['ASW', 'Avoided energy prod.'] = cabinet_small_avoided_energy
@@ -585,6 +555,9 @@ def break_even_orginization(df_be, database_name):
 
         df_be_copy.at['ASW', 'Disinfection'] = wipe_small_container_new
         df_be_copy.at['ALW', 'Disinfection'] = wipe_large_container_new
+
+        df_be_copy.at['ASW', 'Recycling'] = cabinet_small_rec
+        df_be_copy.at['ALW', 'Recycling'] = cabinet_large_rec
 
     return df_be_copy
 
@@ -597,7 +570,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
     case = 'break even'
     df_be, ignore = process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns)
 
-    if 'sterilization' in database_name:
+    if 'case1' in database_name:
         df_be_copy = break_even_orginization(df_be, database_name)
         # Split index into small and large based on criteria
         small_idx = [idx for idx in df_be_copy.index if '2' in idx or 'AS' in idx]
@@ -613,26 +586,27 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         for sc_idx, (scenario_name, scenario_df) in enumerate(scenarios.items()):
             scenario_df.update(df_be_copy.loc[scenario_df.index])
 
-            alu_box_use, production = {}, {}
+            use_cycle, production = {}, {}
 
             for idx, row in scenario_df.iterrows(): 
                 use, prod = 0, 0
                 for col in df_be_copy.columns:
-                    if ('Autoclave' in col or 'Disinfection' in col) and 'H' not in idx:
-                        alu_box_use[idx] = row[col] + use
+                    if ('autoclave' in col.lower() or 'disinfection' in col.lower()) and 'H' not in idx:
+                        use_cycle[idx] = row[col] + use
                         use += row[col]
                     elif 'A' in idx:
+                        # print(idx, col ,(row[col] + prod) * amount_of_uses)
                         production[idx] = (row[col] + prod) * amount_of_uses
                         prod += row[col]
                         
                     else:
                         production[idx] = row[col] + prod
                         prod += row[col]
-
+            
             # Calculate break-even values
             be_dct = {}
             for key, usage in production.items():
-                be_dct[key] = [usage if u == 1 else alu_box_use.get(key, usage) * u + usage
+                be_dct[key] = [usage if u == 1 else use_cycle.get(key, usage) * u + usage
                             for u in range(1, amount_of_uses + 1)]
 
             # Plot results
@@ -641,7 +615,6 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             
 
             for idx, (key, value) in enumerate(be_dct.items()):
-                # if color_idx == 0:
                 try:
                     if 'H' in key:
                         ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], markersize=3.5)
@@ -666,13 +639,14 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             plt.savefig(os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.jpg'), bbox_inches='tight')
             plt.show()
 
-    elif 'model' in database_name:
+        
+    elif 'case2' in database_name:
         multi_use, production = {}, {}
 
         for idx, row in df_be.iterrows(): 
             use, prod = 0, 0
             for col in df_be.columns:
-                if ('Autoclave' in col or 'Dishwasher' in col) and 'RMD' not in idx and 'SUD' not in idx:
+                if 'Disinfection' in col and 'SUD' not in idx:
                     multi_use[idx] = row[col] + use
                     use += row[col]
                 elif 'MUD' in idx:
@@ -705,7 +679,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
 
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-        plt.title(f'Break even for the bipolar burner {break_even_product} - {db_type}', weight = 'bold')
+        plt.title(f'Break even for the {break_even_product} - {db_type}', weight = 'bold')
         plt.xlabel('Cycle(s)',  weight = 'bold')
         plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
         plt.xlim(0, amount_of_uses)
