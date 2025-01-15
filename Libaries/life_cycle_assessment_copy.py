@@ -14,27 +14,42 @@ import LCA_plots as lp
 import non_bio_co2 as nbc
 import import_ecoinvent_and_databases as ied
 
-def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="single use vs multi use"):
-    ied.database_setup(ecoinevnt_paths, system_path)
-    
-    ui1 = int(input('select 1 for case1 and 2 for case2'))
+def get_all_flows(path, lcia_meth, bw_project="single use vs multi use"):
+    bd.projects.set_current("single use vs multi use")
+    db_type = ['apos', 'consq', 'cut_off']
 
-    # Specifying if it is CONSQ (consequential) or APOS
-    ui2 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
-    if ui2 == 1:
-        db_type = 'apos'
-    elif ui2 == 2:
-        db_type = 'consq'
-    elif ui2 == 3:
-        db_type = 'cut_off'
-    
-    
-    database_project = bw_project
-    database_name = f'case{ui1}' + '_' + db_type
+    flows = {}
+    save_dir = {}
+    database_name_dct = {}
+    file_name = {}
+    db_type_dct = {}
+    flow_legend = {}
+    file_name_unique_process = {}
+    sheet_name = {}
+    initialization = {}
+    for nr in range(1,3):
 
-    # Creating the flow legend
-    if 'case1' in database_name:
-        flow_legend = [
+
+        # Setting brightway to the given project
+
+        # Specifiyng which database to usey
+
+        for tp in db_type:
+            database_name = f'case{nr}' + '_' + tp
+            database_name_dct[database_name] = database_name
+            db = bd.Database(database_name)
+            # print(database_name)
+            flow = []
+            if 'case1' in str(db):
+                for act in db:
+                    temp = act['name']
+                    # print(flow)
+                    if ('H2' in temp  or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow:
+                        flow.append(temp)
+                    elif 'alubox' in temp and '+' in temp and 'eol' not in temp.lower():
+                        flow.append(temp)
+                flow.sort()
+                flow_leg = [
                     'H2S',
                     'H2R',
                     'ASC',
@@ -44,31 +59,87 @@ def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="s
                     'ALC',
                     'ALW'
                     ]
-        file_identifier = 'case1'
+                sheet_name[database_name] = 'case1'
+            elif 'case2' in str(db):
+                for act in db:
+                    temp = act['name']
+                    if temp == 'SUD' or temp == 'MUD':
+                        flow.append(temp)
+                    flow_leg = ['SUD', 'MUD']
+                    sheet_name[database_name] = 'case2'
+                flow.sort()
+                flow.reverse()
+            flows[database_name] = flow
+            dir_temp = results_folder(path+'\\results', f"case{nr}", tp)
+            save_dir[database_name] = dir_temp
+            file_name[database_name] = f'{dir_temp}\data_case{nr}_{tp}_recipe.xlsx'
+            db_type_dct[database_name] = tp
+            flow_legend[database_name] = flow_leg
+            # print(f'{dir_temp}\data_uniquie_case{nr}_{tp}_{lcia_meth}.xlsx')
+            file_name_unique_process[database_name] = f'{dir_temp}\data_uniquie_case{nr}_{tp}_{lcia_meth}.xlsx'
+            initialization[database_name] = [bw_project, database_name, flow, lcia_meth, tp]
+    lst = [save_dir, file_name, flow_legend, file_name_unique_process, sheet_name]
+    
+    return lst, initialization
+
+def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="single use vs multi use"):
+    ied.database_setup(ecoinevnt_paths, system_path)
+    ui = int(input(f'Select 1 to choose flows based on the LCA type, 2 for choosing them yourself and 3 for everything'))
+    if ui == 1 or ui == 2:
+        ui1 = int(input('select 1 for case1 and 2 for case2'))
+
+        # Specifying if it is CONSQ (consequential) or APOS
+        ui2 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
+        if ui2 == 1:
+            db_type = 'apos'
+        elif ui2 == 2:
+            db_type = 'consq'
+        elif ui2 == 3:
+            db_type = 'cut_off'
         
+        database_name = f'case{ui1}' + '_' + db_type
+
+        # Creating the flow legend
+        if 'case1' in database_name:
+            flow_legend = [
+                        'H2S',
+                        'H2R',
+                        'ASC',
+                        'ASW',
+                        'H4S',
+                        'H4R',
+                        'ALC',
+                        'ALW'
+                        ]
+            file_identifier = 'case1'
+            
+        else:
+            flow_legend = ['SUD', 'MUD']
+            file_identifier = 'case2'
+
+        # Specifying the file name and sheet name
+        
+        sheet_name = f'{file_identifier}'
+
+        # Creating the saving directory for the results
+        save_dir = results_folder(path+'\\results', file_identifier, db_type)
+        file_name = f'{save_dir}\data_{file_identifier}_{db_type}_{lcia_method}.xlsx'
+        ui2 = int(input(f'Select 1 to choose flows based on {db_type}, else 2 for choosing them yourself'))
+        if ui2 == 1:
+            flows = get_database_type_flows(database_name)
+        elif ui2 == 2:
+            flows = get_user_specific_flows(database_name)
+        
+        print('Chosen flows:')
+        for f in flows:
+            print(f)
+
+        initialization = [bw_project, database_name, flows, lcia_method, db_type]
+        file_name_unique_process = f'{save_dir}\data_uniquie_{file_identifier}_{db_type}_{lcia_method}.xlsx'
+
     else:
-        flow_legend = ['SUD', 'MUD']
-        file_identifier = 'case2'
-
-    # Specifying the file name and sheet name
-    
-    sheet_name = f'{file_identifier}'
-
-    # Creating the saving directory for the results
-    save_dir = results_folder(path+'\\results', file_identifier, db_type)
-    file_name = f'{save_dir}\data_{file_identifier}_{db_type}_{lcia_method}.xlsx'
-    ui2 = int(input(f'Select 1 to choose flows based on {db_type}, else 2 for choosing them yourself'))
-    if ui2 == 1:
-        flows = get_database_type_flows(database_name)
-    elif ui2 == 2:
-        flows = get_user_specific_flows(database_name)
-    
-    print('Chosen flows:')
-    for f in flows:
-        print(f)
-
-    initialization = [database_project, database_name, flows, lcia_method, db_type]
-    file_name_unique_process = f'{save_dir}\data_uniquie_{file_identifier}_{db_type}_{lcia_method}.xlsx'
+        lst, initialization = get_all_flows(path, lcia_method)
+        save_dir, file_name, flow_legend, file_name_unique_process, sheet_name = lst
 
     return flow_legend, file_name, sheet_name, save_dir, initialization, file_name_unique_process
 

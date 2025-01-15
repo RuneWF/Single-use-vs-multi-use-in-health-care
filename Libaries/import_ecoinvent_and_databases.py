@@ -45,21 +45,21 @@ def reload_database(sheet_name, system_path):
         for case, path in enumerate(system_path):    
             db_path = path 
             for db in sheet_name:
-                # print(idx+1, db)
-                # Read the Excel file
                 data = pd.read_excel(db_path, sheet_name=db)
                 user_input2 = input(f'Reload case{case+1}_{db}? [y/n]')
                 if user_input2.lower() == 'y':
                     import_excel_database_to_brightway(data, db)
+
     elif user_input.lower() == 'a':
         for case, path in enumerate(system_path):    
             db_path = path 
             for db in sheet_name:
-
                 data = pd.read_excel(db_path, sheet_name=db)
                 import_excel_database_to_brightway(data, db)
+
     elif user_input.lower() == 'n':
          print('You selected to not reload')
+
     else:
          print('Invalid argument, try again')
          reload_database(sheet_name, system_path)
@@ -107,7 +107,6 @@ def database_setup(ecoinevnt_paths, system_path, bw_project="single use vs multi
                 import_excel_database_to_brightway(data, db)
     
     if import_excel_database_to_brightway.has_been_called is False:
-        print(import_excel_database_to_brightway.has_been_called)
         reload_database(sheet_name, system_path)
         
     
