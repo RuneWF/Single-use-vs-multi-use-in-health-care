@@ -16,7 +16,7 @@ import import_ecoinvent_and_databases as ied
 import reload_lib as rl
 
 def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="single use vs multi use"):
-    ied.database_setup(ecoinevnt_paths, system_path,)
+    ied.database_setup(ecoinevnt_paths, system_path)
     
     ui1 = int(input('select 1 for case1 and 2 for case2'))
 
@@ -244,9 +244,8 @@ def import_LCIA_results(file_name, flow, impact_category):
 
     # Convert JSON strings back to lists for all columns
     df = df.map(lambda x: json.loads(x) if isinstance(x, str) and x.startswith('[') else x)
-
     # Setting the index to the flow
-    df = df.set_axis(flow)
+    df = df.set_axis(flow, axis=0)
 
     # Updating column names
     df.columns = impact_category
@@ -430,8 +429,6 @@ def quick_LCIA_calculator(unique_process_index, func_unit, impact_categories, fi
         for row, val in enumerate(arr):
             df_unique.iat[col, row] = val
 
-
-
     # Specifying the file name and sheet name
     save_LCIA_results(df_unique, file_name_unique, sheet_name, impact_categories)
 
@@ -573,10 +570,6 @@ def quick_LCIA(path, initialization, file_name, file_name_unique, sheet_name):
             
         save_LCIA_results(df, file_name, sheet_name, impact_categories)
 
-    if 'model' in database_name:
-        df = aps.add_pp_sheet_to_diathermy(path, db_type)
-    else:
-        df = import_LCIA_results(file_name, flows, impact_category)
     # obtaing a shortened version of the impact categories for the plots
     plot_x_axis_all = [0] * len(impact_category)
     for i in range(len(plot_x_axis_all)):

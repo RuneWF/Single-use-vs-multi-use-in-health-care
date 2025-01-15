@@ -1,41 +1,169 @@
 # Import libaries
 import pandas as pd
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import numpy as np
 import os
+
+import bw2data as bd
 
 # Importing self-made libaries
 import standards as s
 import life_cycle_assessment as lc
 import LCA_plots as lp
 import reload_lib as rl
+import import_ecoinvent_and_databases as ied
 
 from copy import deepcopy as dc
 
+def get_all_flows(path):
+    bd.projects.set_current("single use vs multi use")
+    db_type = ['apos', 'consq', 'cut_off']
 
-def break_even_initialization(path, lcia_method, lib, ecoinevnt_paths, system_path):
-    # Reloading the self made libaries to ensure they are up to date
-    rl.reload_lib(lib)
+    flows = {}
+    save_dir = {}
+    database_name_lst = []
+    file_name = {}
+    db_type_dct = {}
 
-    # Extracting the variables used
-    flow_legend, file_name, _, save_dir, initialization, _ = lc.initilization(path, lcia_method, ecoinevnt_paths, system_path)
-    impact_category = lc.lcia_method(lcia_method)
+    for nr in range(1,3):
 
-    # Importing the results data frame
-    df = lc.import_LCIA_results(file_name, initialization[2], impact_category)
 
-    df_rearranged = lc.rearrange_dataframe_index(df, database=initialization[1])
-    if 'recipe' in lcia_method:
-        df_res, df_endpoint = lc.recipe_dataframe_split(df_rearranged)
-    else:
-        df_res = df_rearranged
+        # Setting brightway to the given project
+
+        # Specifiyng which database to usey
+
+        for tp in db_type:
+            database_name = f'case{nr}' + '_' + tp
+            database_name_lst.append(database_name)
+            db = bd.Database(database_name)
+            # print(database_name)
+            flow = []
+            if 'case1' in str(db):
+                for act in db:
+                    temp = act['name']
+                    # print(flow)
+                    if ('H2' in temp  or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow:
+                        flow.append(temp)
+                    elif 'alubox' in temp and '+' in temp and 'eol' not in temp.lower():
+                        flow.append(temp)
+                flow.sort()
+            elif 'case2' in str(db):
+                for act in db:
+                    temp = act['name']
+                    if temp == 'SUD' or temp == 'MUD':
+                        flow.append(temp)
+                flow.sort()
+                flow.reverse()
+            flows[database_name] = flow
+            dir_temp = s.results_folder(path+'\\results', f"case{nr}", tp)
+            save_dir[database_name] = dir_temp
+            file_name[database_name] = f'{dir_temp}\data_case{nr}_{tp}_recipe.xlsx'
+            db_type_dct[database_name] = tp
     
-    # seperating the GWP potential from the resy
-    df_col = [df_res.columns[1]]
-    df_GWP = df_res[df_col]
+    return flows, database_name_lst, db_type_dct, save_dir, file_name
 
-    variables = [initialization[1], df_GWP, initialization[-1], flow_legend, save_dir]
+def initilization(path, lcia_method):
 
+    # ied.database_setup(ecoinevnt_paths, system_path,)
+
+    ui2 = int(input(f'Select 1 to choose flows based on the LCA type, 2 for choosing them yourself and 3 for everything'))
+
+    if ui2 == 1 or ui2 == 2:
+        ui1 = int(input('select 1 for case1 and 2 for case2'))
+        # Specifying if it is CONSQ (consequential) or APOS
+        ui2 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
+        if ui2 == 1:
+            db_type = 'apos'
+        elif ui2 == 2:
+            db_type = 'consq'
+        elif ui2 == 3:
+            db_type = 'cut_off'
+
+
+        # database_project = bw_project
+        database_name = f'case{ui1}' + '_' + db_type
+
+        # Creating the flow legend
+        if 'case1' in database_name:
+            # flow_legend = [
+            #             'H2S',
+            #             'H2R',
+            #             'ASC',
+            #             'ASW',
+            #             'H4S',
+            #             'H4R',
+            #             'ALC',
+            #             'ALW'
+            #             ]
+            file_identifier = 'case1'
+
+        else:
+            # flow_legend = ['SUD', 'MUD']
+            file_identifier = 'case2'
+
+        # Specifying the file name and sheet name
+
+        # sheet_name = f'{file_identifier}'
+
+        # Creating the saving directory for the results
+        save_dir = s.results_folder(path+'\\results', file_identifier, db_type)
+        file_name = f'{save_dir}\data_{file_identifier}_{db_type}_{lcia_method}.xlsx'
+
+        if ui2 == 1:
+            flows = lc.get_database_type_flows(database_name)
+        elif ui2 == 2:
+            flows = lc.get_user_specific_flows(database_name)
+
+        return flows, database_name, db_type, save_dir, file_name
+
+    elif ui2 == 3:
+        flows, database_name, db_type, save_dir, file_name = get_all_flows(path)
+        return flows, database_name, db_type, save_dir, file_name
+
+
+
+def break_even_initialization(path, lcia_method):
+    # Reloading the self made libaries to ensure they are up to date
+    flows, database_name, db_type, save_dir, file_name = initilization(path, lcia_method)
+    # initialization = [database_project, database_name, flows, lcia_method, db_type]
+    impact_category = lc.lcia_method(lcia_method)
+    if type(flows) is list:
+        # Extracting the variables used
+        
+        
+
+        # Importing the results data frame
+        df = lc.import_LCIA_results(file_name, flows, impact_category)
+
+        df_rearranged = lc.rearrange_dataframe_index(df, database=database_name)
+        if 'recipe' in lcia_method:
+            df_res, df_endpoint = lc.recipe_dataframe_split(df_rearranged)
+        else:
+            df_res = df_rearranged
+
+        # seperating the GWP potential from the resy
+        df_col = [df_res.columns[1]]
+        df_GWP = df_res[df_col]
+
+        variables = [database_name, df_GWP, db_type, save_dir, flows, impact_category]
+    else:
+        variables = {}
+        for db, (key, item) in enumerate(flows.items()):
+            
+            # Importing the results data frame
+            df = lc.import_LCIA_results(file_name[key], item, impact_category)
+
+            df_rearranged = lc.rearrange_dataframe_index(df, database_name[db])
+            if 'recipe' in lcia_method:
+                df_res, df_endpoint = lc.recipe_dataframe_split(df_rearranged)
+            else:
+                df_res = df_rearranged
+
+            # seperating the GWP potential from the resy
+            df_col = [df_res.columns[1]]
+            df_GWP = df_res[df_col]
+
+            variables[key] = [database_name[db], df_GWP, db_type[key], save_dir[key], flows[key], impact_category]
     return variables
 
 def sterilization_min_max(database_type):
@@ -92,7 +220,7 @@ def uncertainty_values(df_stack_updated, database_name):
     # Creating two dataframes for the minimum and maximum values
     df_err_min = pd.DataFrame(0, index=df_be.index, columns=df_be.columns, dtype=object)
     df_err_max = pd.DataFrame(0, index=df_be.index, columns=df_be.columns, dtype=object)
-    
+
     df_err = [df_err_min, df_err_max]
 
     # Finding the minimimum and maximum value of the sensitivity analysis
@@ -123,7 +251,7 @@ def uncertainty_values(df_stack_updated, database_name):
                     # Finding the min and max values then varying the lifetime of the container
                     if 'H' not in idx and 'Disinfection' not in col and 'Autoclave' not in col:
                         temp = (df_be.at[idx, col] * lst_std[sc] / 513)
-                    
+
                     # Finding the min and max values then varying the quantity of container in the autoclave
                     elif 'Autoclave' in col:
                         temp = (df_be.at[idx, col] * use_dct[idx][sc] / use_dct[idx][0])
@@ -134,14 +262,14 @@ def uncertainty_values(df_stack_updated, database_name):
                     # If none of above criterias is fulfil its set to 0
                     else:
                         temp = 0
-                    
+
                     if sc == 0 and temp != 0:
                         row[col] = df_be.at[idx, col] - temp
                     elif sc == 1 and temp != 0:
                         row[col] = temp - df_be.at[idx, col]
                     else:
                         row[col] = 0
-            
+
     elif 'case2' in database_name:
         life_time = [50,500]
         autoclave = [36, 48]
@@ -158,7 +286,7 @@ def uncertainty_values(df_stack_updated, database_name):
                     # Finding the min and max values then varying the lifetime of the bipolar burner
                     if 'MUD' in idx and 'Disinfection' not in col and 'Autoclave' not in col:
                         temp = (df_be.at[idx, col] * life_time[sc] / 250 )
-                    # Finding the min and max values then varying the quantity of bipolar burner in the autoclave   
+                    # Finding the min and max values then varying the quantity of bipolar burner in the autoclave
                     elif 'MUD' in idx and 'Autoclave' in col:
                         temp = (df_be.at[idx, col] * autoclave[sc] /autoclave[0])
                     # Finding the min and max values then varying the quantity of bipolar burner in the cabinet washer
@@ -179,7 +307,7 @@ def uncertainty_values(df_stack_updated, database_name):
                         row[col] = temp - df_be.at[idx, col]
                     else:
                         row[col] = 0
-                    
+
     else:
         print("Select either SU_vs_MU -> sterilization or dithermy -> model or create your own sensitivity values ")
 
@@ -189,15 +317,12 @@ def uncertainty_values(df_stack_updated, database_name):
 
     return df_err_min, df_err_max, colors
 
-
-
-
 def uncertainty_graph(variables, lib, y_axis):
     rl.reload_lib(lib)
     # Extracting values for the plot and to create the plot
     y_min, y_max, y_step, y_offset  = y_axis
     database_name, df_GWP, db_type, flow_legend, save_dir = variables
-    
+
     # Creating the dataframe for min and max values
     columns = lc.unique_elements_list(database_name)
     df_stack_updated, totals_df = lp.process_categorizing(df_GWP, db_type, database_name, 'break even', flow_legend, columns)
@@ -220,7 +345,7 @@ def uncertainty_graph(variables, lib, y_axis):
 
     df_tot_err = pd.DataFrame(tot_err_dict.values(), index=df_err_min.index, columns=['Min', 'Max'])
 
-    
+
     x = []
     y = []
     y_err_min = df_tot_err['Min'].to_list()
@@ -229,7 +354,7 @@ def uncertainty_graph(variables, lib, y_axis):
     tot_df = totals_df['Value'].to_frame()
     tot_df.index = df_tot_err.index
     plt_index = [i for i in tot_df.index]
-    
+
     # extracting the x and y values for the plot
     for col in tot_df.columns:
         for x_val, (idx, row) in enumerate(tot_df.iterrows()):
@@ -237,12 +362,12 @@ def uncertainty_graph(variables, lib, y_axis):
             y.append(row[col])
     # Creating the y error values
     y_err = (np.array(y_err_min), np.array(y_err_max)) # https://stackoverflow.com/questions/31081568/python-plotting-error-bars-with-different-values-above-and-below-the-point
-    
+
     # Creating the plot
     _, ax = plt.subplots(figsize=(10, 6))
     plt.errorbar(x,
-                 y, 
-                 yerr=y_err, 
+                 y,
+                 yerr=y_err,
                  fmt='.',                    # Defining the marker style
                  capsize=6,                  # Add caps
                  ecolor=colors[4],           # Color of error bars
@@ -266,11 +391,11 @@ def uncertainty_graph(variables, lib, y_axis):
         plt.title(f"Sensitivity analysis of sterilization for total GWP impact for 1 FU - {db_type}", weight='bold')
     else:
         plt.title(f"Sensitivity analysis of sterilization for total GWP impact for 1 FU - {db_type}", weight='bold')
-    
+
     plt.tight_layout()
 
     # Save and display plot
     plt.savefig(os.path.join(save_dir, f'sensitivity_analysis_{database_name}_{db_type}.jpg'), bbox_inches='tight')
-    plt.show()  
-    
+    plt.show()
+
     return df_tot_err, df_err_min, df_err_max

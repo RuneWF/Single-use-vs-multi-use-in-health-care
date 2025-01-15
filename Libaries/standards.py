@@ -5,7 +5,6 @@ from LCA_plots import category_organization
 
 def plot_colors(database_name, color):
     temp_dct = category_organization(database_name)
-    print(type(temp_dct))
     uniqie_elements = []
     for lst in temp_dct.values():
         for item in lst:
@@ -32,7 +31,7 @@ def results_folder(path, name, db):
     
     except UnboundLocalError:
         print('Error occured')
-    
+    print(save_dir)
     return save_dir
 
 

@@ -55,7 +55,7 @@ def flow_name_update(x, gwp, db_type, database_name):
 
     elif 'case2' in database_name or 'model' in database_name:
         if 'H200' in x:
-            # print(x)
+            print(x, gwp)
             x = 'Ster. consumables' 
         if 'autoclave' in x.lower():
             x = 'Ster. autoclave' 
@@ -125,7 +125,7 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
 
     elif 'case2' in database_name or 'model' in database_name:
         if 'H200' in x:
-            # print(x)
+            print(x, gwp)
             x = 'Ster. consumables' 
         if 'autoclave' in x.lower():
             x = 'Ster. autoclave'
