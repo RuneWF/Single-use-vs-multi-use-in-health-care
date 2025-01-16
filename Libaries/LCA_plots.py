@@ -693,7 +693,15 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         plt.savefig(os.path.join(save_dir, f'break_even_bipolar_{db_type}.jpg'), bbox_inches='tight')
         plt.show()
 
-def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_categories, flow_legend):
+def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_categories, flow_legend, plot_structure):
+    leg_pos_scal, leg_pos_gwp_, y_min_gwp, y_max_gwp, y_step_gwp, amount_of_uses, y_max_be, y_step_be, x_step_be_, be_product = plot_structure
+    
+    leg_pos_scaled = {key: pos for case, pos in leg_pos_scal.items() for key in initialization.keys() if case in key}
+    leg_pos_gwp = {key: pos for case, pos in leg_pos_gwp_.items() for key in initialization.keys() if case in key}
+    life_time_use = {key: use for case, use in amount_of_uses.items() for key in initialization.keys() if case in key}
+    x_step_be = {key: x_val for case, x_val in x_step_be_.items() for key in initialization.keys() if case in key}
+    break_even_product = {key: be_name for case, be_name in be_product.items() for key in initialization.keys() if case in key}
+
     for key, item in initialization.items():
         database_name = item[1]
 
@@ -702,7 +710,6 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
             df_mid, df_endpoint = df_res
             plot_x_axis, plot_x_axis_end = plot_x_axis_lst
 
-        df_endpoint
 
         df_tot, df_scaled = lc.dataframe_element_scaling(df_mid)
         df_col = [df_mid.columns[1]]
@@ -720,30 +727,18 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
             colors.append(c)
         inputs = [flow_legend[key], colors, save_dir[key], item[4], database_name]
 
-        leg_pos_mid = .65
-        scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_categories[key], leg_pos_mid)
+        scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_categories[key], leg_pos_scaled[key])
 
-        leg_pos_end = 0.65
         if 'recipe' in item[3].lower():
             df_tot_e, df_scaled_e = lc.dataframe_element_scaling(df_endpoint)
-            scaled_FU_plot(df_scaled_e, plot_x_axis_end, inputs, impact_categories[key][-3:], leg_pos_end)
+            scaled_FU_plot(df_scaled_e, plot_x_axis_end, inputs, impact_categories[key][-3:], leg_pos_scaled[key])
 
-
-        y_min = -0.6
-        y_max = 1.6
-        step = 0.2
-        leg_pos = 0.652
         marker_offset = 0.1
         marker_color = 'aliceblue'
-        y_axis_values = [y_min, y_max, step, leg_pos, marker_offset, marker_color]
+        y_axis_values = [y_min_gwp[key], y_max_gwp[key], y_step_gwp[key], leg_pos_gwp[key], marker_offset, marker_color]
         gwp_scenario_plot(df_GWP, inputs, y_axis_values)
 
-        amount_of_uses = 250
-        y_max = [300, 650]
-        ystep = [50, 50]
-        xstep = 50
-        break_even_product = 'container'
         color_idx = [0, 2, 4, 6]
 
-        plot_controls = [amount_of_uses, y_max, ystep, xstep, break_even_product, color_idx]
+        plot_controls = [life_time_use[key], y_max_be[key], y_step_be[key], x_step_be[key], break_even_product[key], color_idx]
         break_even_graph(df_GWP, inputs, plot_controls)
