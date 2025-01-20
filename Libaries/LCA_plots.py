@@ -178,8 +178,17 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
         values = df_scaled.loc[process, columns_to_plot].values
         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
     
+    lcia_string = impact_category[0][0]
+    lcia_string = lcia_string.replace(' Runes edition', '')
+    lcia_string = lcia_string.replace('ReCiPe 2016 v1.03, ','')
+    if 'cut' in db_type.lower():
+        db_type = db_type.replace('_', '-')
+        db_type = db_type.capitalize()
+    else:
+        db_type= db_type.upper()
+
     # Setting labels and title
-    ax.set_title(f'Scaled impact of the Functional Unit - {impact_category[0][0]} {db_type}',weight='bold',fontsize=14)
+    ax.set_title(f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',weight='bold',fontsize=14)
     ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
     ax.set_xticklabels(plot_x_axis, fontsize=10)
     if 'case1' in database_name:
@@ -486,10 +495,15 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color,  mec = 'k', markersize=6, label='Total'))
     ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .24, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10.5)
 
-
+    if 'cut' in db_type.lower():
+        db_type = db_type.replace('_', '-')
+        db_type = db_type.capitalize()
+    else:
+        db_type= db_type.upper()
+   
     
     # Setting labels and title
-    plt.title(f'GWP impact of each life stage for 1 FU - {db_type}', weight='bold', fontsize = 14)
+    plt.title(f'GWP impact of each life stage for 1 FU ({db_type})', weight='bold', fontsize = 14)
     
     plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]', weight='bold', fontsize = 11)
     plt.yticks(np.arange(y_min, y_max + 0.01, step=steps), fontsize = 11)
@@ -622,10 +636,16 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                         ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
                 except IndexError:
                     print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
+            
+            if 'cut' in db_type.lower():
+                db_type = db_type.replace('_', '-')
+                db_type = db_type.capitalize()
+            else:
+                db_type= db_type.upper()
 
             # Customize plot
             ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-            plt.title(f'Break even for the {scenario_name} {break_even_product} - {db_type}', weight = 'bold')
+            plt.title(f'Break even for the {scenario_name} {break_even_product} ({db_type})', weight = 'bold')
             plt.xlabel('Cycle(s)',  weight = 'bold')
             plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
             plt.xlim(0, amount_of_uses)
@@ -676,10 +696,15 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                     ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
             except IndexError:
                 print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
+        if 'cut' in db_type.lower():
+            db_type = db_type.replace('_', '-')
+            db_type = db_type.capitalize()
+        else:
+            db_type= db_type.upper()
 
         # Customize plot
         ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-        plt.title(f'Break even for the {break_even_product} - {db_type}', weight = 'bold')
+        plt.title(f'Break even for the {break_even_product} ({db_type})', weight = 'bold')
         plt.xlabel('Cycle(s)',  weight = 'bold')
         plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
         plt.xlim(0, amount_of_uses)
