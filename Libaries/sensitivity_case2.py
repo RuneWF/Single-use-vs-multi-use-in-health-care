@@ -67,54 +67,37 @@ def sterilization_min_max(database_type, autoclave_gwp):
 
     return min_max_lst, min_max_auto
 
-def uncertainty_case2(val_dct, df_be, totals_df, idx_sens, col_to_df):
+def uncertainty_case2(val_dct, df_be, df):
     use_elec = ((60-4)/60*40 + 500 * 4/60)/1000
-    df_sensitivity_v = pd.DataFrame(0, index=idx_sens, columns=col_to_df, dtype=object)
+    df_dct = {}
 
-    idx_col = totals_df.columns[0]
-    idx_tot = [i[0] for i in totals_df[idx_col]]
-    totals_df.index = idx_tot
-
-    tot_lst = []
-    for tidx in totals_df.index:
-        tot_lst.append(totals_df.at[tidx, 'Value'])
-
-    for col in df_sensitivity_v.columns:
-        for idx, row in df_sensitivity_v.iterrows():
-            for key, dct in val_dct.items():
-                    if idx in key:
-                        for i, r in df_be.iterrows():
-                            for c in df_be.columns:
-                                for sc, lst in dct.items():
-                                    temp = 0
-                                    tot_baseline = 0
-                                    if sc in i:
-                                        tot_baseline += df_be.at[i, c]
-                                        if 'lower' in col:
-                                            val = lst[0]
-                                            tidx = col.replace(" - lower%", "")
-                                        else:
-                                            val = lst[1]
-                                            tidx = col.replace(" - upper%", "")
-                                        if idx == 'Life time' and i in col and 'SUD' not in col and 'Disinfection' not in c and 'autoclave' not in c:                                        
-                                            temp += (df_be.at[i, c] * val / 250)
-                                            
-                                        elif idx == 'autoclave' and 'autoclave' in c and 'SUD' not in col:
-                                            temp += (df_be.at[i, c] * val / (12*4))
-                                        elif idx == 'sterilization' and 'consumables' in c and 'SUD' not in col:
-                                            temp += val
-                                        elif idx == 'cabinet washer' and 'Disinfection' in c and 'SUD' not in col:
-                                            temp += (df_be.at[i, c] * val / 32)
-                                            
-                                        elif idx == 'surgery time' and 'Disinfection' in c:
-                                            temp += (df_be.at[i, c] * val / use_elec)
-                                    if temp != 0:
-                                        row[col] = temp
-    
+    for cr in df.columns:
+            df_dct[cr] = {}
+            for ir, rr in df.iterrows():
+                df_sens = dc(df_be)
+                for col in df_sens.columns:
+                    for idx, row in df_sens.iterrows():
+                        if ir != 'total':
+                            dct = val_dct[ir]
+                            val = 0 if 'lower' in cr else 1
+                            if ir == 'Life time' and idx in cr and 'SUD' not in cr and 'Disinfection' not in col and 'autoclave' not in col:                                        
+                                row[col] *= 250 / dct[idx][val]
+                                
+                            elif ir == 'autoclave' and 'Autoclave' in col and 'SUD' not in idx:
+                                row[col] *= (12*4) / dct[idx][val]
+                            elif ir == 'sterilization' and 'consumables' in col and 'SUD' not in idx:
+                                row[col] = dct[idx][val]
+                            elif ir == 'cabinet washer' and 'Disinfection' in col and 'SUD' not in idx:
+                                row[col] *= 32 / dct[idx][val]
+                            elif ir == 'surgery time':
+                                row[col] *= use_elec / dct[idx][val]
+                df_temp = df_sens.loc[cr[:3]].to_frame().T
+                df_dct[cr].update({ir : df_temp})
+        
                 
     
 
-    return tab.sensitivity_table_results(totals_df, idx_sens, col_to_df, df_sensitivity_v)
+    return df_dct
 
 def case2_initilazation(df_be, database_type, autoclave_gwp):
 

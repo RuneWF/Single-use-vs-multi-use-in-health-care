@@ -1,34 +1,48 @@
 # Import libaries
 import pandas as pd
+from copy import deepcopy as dc
 
 # Importing self-made libaries
 import sens_table as tab
 
 def process_row(idx, row, col, val_dct, df_be):
+            temp = 0
             for key, dct in val_dct.items():
                 if idx in key:
                     for c in df_be.columns:
                         for i in df_be.index:
-                            temp = calculate_temp_tot(idx, col, dct, df_be, i, c)
-                            if temp != 0:
-                                row[col] = temp
+                            if i.lower() in col.lower():
+                                temp += calculate_temp_tot(idx, col, dct, df_be, i, c)
+                                if temp != 0:
+                                    row[col] = temp
+                                    print(i, c, col, idx, temp)
+                                    # if 'lower' in col:
+                                    #     row[col] = temp - df_be.at[i, c]
+                                    # else:
+                                    #     row[col] = temp + df_be.at[i, c]                            
 
 def calculate_temp_tot(idx, col, dct, df_be, i, c):
     temp = 0
     for sc, lst in dct.items():
+        
         if sc in col:
+            # print(sc, idx, col, i, c)
             val = lst[0] if 'lower' in col else lst[1]
-            temp += calculate_temp(idx, col, df_be, i, c, val, lst)
+            temp = calculate_temp(idx, col, df_be, i, c, val, lst)
+
     return temp
 
 def calculate_temp(idx, col, df_be, i, c, val, lst):
+    
     if idx == 'Life time' and i in col and 'H' not in i and 'Disinfection' not in c and 'Autoclave' not in c:
         return df_be.at[i, c] * val / 513
     elif idx == 'autoclave' and 'Autoclave' in c:
+        # print(idx, col, i, c, calculate_autoclave_temp(col, df_be, i, c, val))
         return calculate_autoclave_temp(col, df_be, i, c, val)
-    elif idx == 'protection cover' and 'H' in i and 'Disinfection' not in col and 'Autoclave' not in col and 'Recycling' not in col:
+    elif idx == 'protection cover' and i in col and 'Disinfection' not in col and 'Autoclave' not in col and 'Recycling' not in col:
         return df_be.at[i, c] * val / lst[1]
-    return 0
+    else:
+        return 0
 
 def calculate_autoclave_temp(col, df_be, i, c, val):
     if '2' in col:
@@ -39,7 +53,8 @@ def calculate_autoclave_temp(col, df_be, i, c, val):
         return df_be.at[i, c] * val / 9
     elif 'AL' in col:
         return df_be.at[i, c] * val / 6
-    return 0
+    else:
+        return 0
 
 def uncertainty_case1(df_sensitivity, val_dct, df_be, totals_df, idx_sens, col_to_df):
     """
@@ -54,18 +69,46 @@ def uncertainty_case1(df_sensitivity, val_dct, df_be, totals_df, idx_sens, col_t
     pd.DataFrame: Updated DataFrame with sensitivity analysis results.
     """
     
+    df_dct = {}
+    for cr in df_sensitivity.columns:
+        df_dct[cr] = {}
+        for ir, rr in df_sensitivity.iterrows():
+            # print(ir)
+            temp = 0
+            df_sens = dc(df_be)
+            # print(cr, ir)
+            # dct_idx = cr + ' - ' + ir
+            
+            for col in df_sens.columns:
+                # print(col)
+                for idx, row in df_sens.iterrows():
+                    if ir != 'total':
+                        dct = val_dct[ir]
+                        val = 0 if 'lower' in cr else 1
 
-    for col in df_sensitivity.columns:
-                for idx, row in df_sensitivity.iterrows():
-                    process_row(idx, row, col, val_dct, df_be)
+                        if ir == 'Life time' and idx in cr  and 'H' not in idx and 'Disinfection' not in col and 'Autoclave' not in col:
+                            row[col] *=  513 / dct[idx][val] 
 
-    idx_col = totals_df.columns[0]
-    idx_tot = [i[0] for i in totals_df[idx_col]]
-    totals_df.index = idx_tot
+                        elif ir == 'autoclave' and 'Autoclave' in col and idx in cr:
+                            # print(cr, ir, col)
+                            if '2' in cr:
+                                    row[col] *= 12 / dct[idx][val]
+                            elif '4' in cr:
+                                    
+                                    row[col] *= 8 /dct[idx][val]
+                                    print(idx, row[col], 8 / dct[idx][val])
+                            elif 'AS' in cr:
+                                    row[col] *= 9/ dct[idx][val]
+                            elif 'AL' in cr:
+                                    row[col] *=  6 / dct[idx][val]
+                        elif ir == 'protection cover' and idx in cr and 'A' not in idx and 'Disinfection' not in col and 'Autoclave' not in col and 'Recycling' not in col :
+                            row[col] *= dct[idx][val] / dct[idx][1]
+            df_temp = df_sens.loc[cr[:3]].to_frame().T
+            df_dct[cr].update({ir : df_temp})
 
-    
+    return df_dct
 
-    return tab.sensitivity_table_results(totals_df, idx_sens, col_to_df, df_sensitivity)
+
 
 def case1_initilazation(df_be):
     idx_sens = [
