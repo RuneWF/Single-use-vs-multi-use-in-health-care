@@ -9,6 +9,13 @@ def box_plot(path, inputs, plot_structure):
     colors = inputs[1]
     save_dir = inputs[2]
 
+    plt.rcParams.update({
+    'font.size': 12,      # General font size
+    'axes.titlesize': 14, # Title font size
+    'axes.labelsize': 12, # Axis labels font size
+    'legend.fontsize': 10 # Legend font size
+    }) 
+
     box_plot_df = pd.read_excel(path)
     df_bp = ((box_plot_df['Use pr day']).dropna()).to_frame()
 
@@ -17,7 +24,6 @@ def box_plot(path, inputs, plot_structure):
             row[col] *= 365 * life_time
 
     # Update font size
-    plt.rcParams.update({'font.size': 10})
 
     # Create the boxplot
     boxplot = sns.boxplot(
@@ -66,15 +72,28 @@ def box_plot(path, inputs, plot_structure):
         # plt.Line2D([0], [0], color=colors[c0], markerfacecolor='w', marker='o', linestyle='None', markersize=6, label='Outliers')
     ]
 
-    plt.legend(handles=legend_elements, bbox_to_anchor=((1-leg_size)/len(legend_elements), -0.1, leg_size, 0), loc="lower left", mode="expand", borderaxespad=0,  ncol=4, fontsize=10)
+    # plt.legend(handles=legend_elements, bbox_to_anchor=((1-leg_size)/len(legend_elements), -0.1, leg_size, 0), loc="lower left", mode="expand", borderaxespad=0,  ncol=4, fontsize=10)
 
+    plt.legend(
+            handles=legend_elements,
+            loc='upper center',
+            bbox_to_anchor=(0.5, -0.1),
+            ncol=4,  # Adjust the number of columns based on legend size
+            fontsize=10,
+            frameon=False
+        )
     # Customize the plot (optional)
     plt.ylabel(plot_label, fontsize=10, weight='bold')
     ax.get_xaxis().set_visible(False)
     plt.yticks(np.arange(y_min, y_max + 0.001, step=ystep))
     plt.ylim(y_min-0.001, y_max+0.005)
 
+    # Save the plot with high resolution
+    output_file = os.path.join(
+        save_dir,
+        f'boxplot_{save_name}.png'
+    )
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f'boxplot_{save_name}.jpg'), bbox_inches='tight')
-
+    plt.savefig(output_file, dpi=300, format='png', bbox_inches='tight')
     plt.show()
+

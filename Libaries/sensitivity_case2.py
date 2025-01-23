@@ -26,8 +26,10 @@ def sterilization_min_max(database_type, autoclave_gwp):
     min = None
     max = None
     min_auto = 0
-
     max_auto = 0
+
+    min_idx = ''
+    max_idx = ''
     for col in df_sens:
         for idx, row in df_sens.iterrows():
             val = row[col]
@@ -41,6 +43,7 @@ def sterilization_min_max(database_type, autoclave_gwp):
 
             elif val < min:
                 min = val
+                min_idx = idx
                 if '2' in idx:
                     min_auto = 12 * 4
                 elif '4' in idx:
@@ -50,7 +53,10 @@ def sterilization_min_max(database_type, autoclave_gwp):
                 else:
                     min_auto = 6 * 6
                 
+
             elif val > max:
+                max = val
+                max_idx = idx
                 if '2' in idx:
                     max_auto = 18 *4
                 elif '4' in idx:
@@ -59,11 +65,14 @@ def sterilization_min_max(database_type, autoclave_gwp):
                     max_auto = 12 * 4
                 else:
                     max_auto = 9 * 6
-                max = val
+                
+                
     autoclave_gwp_min = autoclave_gwp/min_auto
     autoclave_gwp_max = autoclave_gwp/max_auto
     min_max_lst = [min - autoclave_gwp_min, max - autoclave_gwp_max]
     min_max_auto = [min_auto, max_auto]
+
+    print(f"lowest impact : {min_idx}, highest impact : {max_idx}")
 
     return min_max_lst, min_max_auto
 
@@ -83,7 +92,8 @@ def uncertainty_case2(val_dct, df_be, df):
                             if ir == 'Life time' and idx in cr and 'SUD' not in cr and 'Disinfection' not in col and 'autoclave' not in col:                                        
                                 row[col] *= 250 / dct[idx][val]
                                 
-                            elif ir == 'autoclave' and 'Autoclave' in col and 'SUD' not in idx:
+                            elif ir == 'autoclave' and 'autoclave' in col.lower() and 'SUD' not in idx:
+                                print(ir, cr, idx, col)
                                 row[col] *= (12*4) / dct[idx][val]
                             elif ir == 'sterilization' and 'consumables' in col and 'SUD' not in idx:
                                 row[col] = dct[idx][val]

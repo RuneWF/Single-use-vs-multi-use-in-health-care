@@ -96,7 +96,6 @@ def uncertainty_case1(df_sensitivity, val_dct, df_be, totals_df, idx_sens, col_t
                             elif '4' in cr:
                                     
                                     row[col] *= 8 /dct[idx][val]
-                                    print(idx, row[col], 8 / dct[idx][val])
                             elif 'AS' in cr:
                                     row[col] *= 9/ dct[idx][val]
                             elif 'AL' in cr:

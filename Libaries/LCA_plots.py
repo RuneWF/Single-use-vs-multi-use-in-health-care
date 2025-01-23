@@ -153,62 +153,62 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
 
     return x, gwp
 
-# Function to create the scaled FU plot
-def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
-    plt.rc('axes', labelsize=10) 
-    flow_legend = inputs[0]
-    colors = inputs[1]
-    save_dir = inputs[2]
-    db_type = inputs[3]
-    database_name = inputs[4]
+# # Function to create the scaled FU plot
+# def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
+#     plt.rc('axes', labelsize=10) 
+#     flow_legend = inputs[0]
+#     colors = inputs[1]
+#     save_dir = inputs[2]
+#     db_type = inputs[3]
+#     database_name = inputs[4]
 
-    # Extracting the columns plot
-    columns_to_plot = df_scaled.columns
+#     # Extracting the columns plot
+#     columns_to_plot = df_scaled.columns
 
-    index_list = list(df_scaled.index.values)
+#     index_list = list(df_scaled.index.values)
 
-    # Plotting
-    _, ax = plt.subplots(figsize=(12, 6))
+#     # Plotting
+#     _, ax = plt.subplots(figsize=(12, 6))
 
-    bar_width = 1/(len(index_list) + 1) 
-    index = np.arange(len(columns_to_plot))
+#     bar_width = 1/(len(index_list) + 1) 
+#     index = np.arange(len(columns_to_plot))
 
-    # Plotting each group of bars
-    for i, process in enumerate(df_scaled.index):
-        values = df_scaled.loc[process, columns_to_plot].values
-        ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
+#     # Plotting each group of bars
+#     for i, process in enumerate(df_scaled.index):
+#         values = df_scaled.loc[process, columns_to_plot].values
+#         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
     
-    lcia_string = impact_category[0][0]
-    lcia_string = lcia_string.replace(' Runes edition', '')
-    lcia_string = lcia_string.replace('ReCiPe 2016 v1.03, ','')
-    if 'cut' in db_type.lower():
-        db_type = db_type.replace('_', '-')
-        db_type = db_type.capitalize()
-    else:
-        db_type= db_type.upper()
+#     lcia_string = impact_category[0][0]
+#     lcia_string = lcia_string.replace(' Runes edition', '')
+#     lcia_string = lcia_string.replace('ReCiPe 2016 v1.03, ','')
+#     if 'cut' in db_type.lower():
+#         db_type = db_type.replace('_', '-')
+#         db_type = db_type.capitalize()
+#     else:
+#         db_type= db_type.upper()
 
-    # Setting labels and title
-    ax.set_title(f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',weight='bold',fontsize=14)
-    ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
-    ax.set_xticklabels(plot_x_axis, fontsize=10)
-    if 'case1' in database_name:
-        ax.set_xlim(-0.2, len(columns_to_plot))
-    elif 'case2' in database_name:
-        ax.set_xlim(-0.35, len(columns_to_plot) -0.3)
-    else:
-        ax.set_xlim(0, len(columns_to_plot))
+#     # Setting labels and title
+#     ax.set_title(f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',fontsize=14)
+#     ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
+#     ax.set_xticklabels(plot_x_axis, fontsize=10)
+#     if 'case1' in database_name:
+#         ax.set_xlim(-0.2, len(columns_to_plot))
+#     elif 'case2' in database_name:
+#         ax.set_xlim(-0.35, len(columns_to_plot) -0.3)
+#     else:
+#         ax.set_xlim(0, len(columns_to_plot))
 
-    # Specifying the direction of the text on the axis should be rotated
-    plt.xticks(rotation=0)
-    # Setting the legend
-    ax.legend(flow_legend,bbox_to_anchor=(1.01, legend_position, .1, 0), loc="lower left",
-                mode="expand", borderaxespad=0,  ncol=1, fontsize=10.5)
-    plt.xticks(fontsize = 11)
-    plt.yticks(fontsize = 11)
-    # Saving and showing the plot
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.jpg'), bbox_inches='tight')
-    plt.show()
+#     # Specifying the direction of the text on the axis should be rotated
+#     plt.xticks(rotation=0)
+#     # Setting the legend
+#     ax.legend(flow_legend,bbox_to_anchor=(1.01, legend_position, .1, 0), loc="lower left",
+#                 mode="expand", borderaxespad=0,  ncol=1, fontsize=10.5)
+#     plt.xticks(fontsize = 11)
+#     plt.yticks(fontsize = 11)
+#     # Saving and showing the plot
+#     plt.tight_layout()
+#     plt.savefig(os.path.join(save_dir, f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.png'), bbox_inches='tight')
+#     plt.show()
 
 # Function for single score plot for EF LCIA results
 def single_score_plot(directory, df_tot, inputs):
@@ -230,7 +230,7 @@ def single_score_plot(directory, df_tot, inputs):
     ax.bar(index + bar_width, lst_scaled, bar_width, label=index_list, color=colors)
 
     # Setting labels and title
-    ax.set_title('Scaled single score of the Functional Unit',weight='bold')
+    ax.set_title('Scaled single score of the Functional Unit')
     ax.set_xticks(index + bar_width)
     ax.set_xticklabels(flow_legend)
     #plt.xticks(rotation=90)
@@ -238,7 +238,7 @@ def single_score_plot(directory, df_tot, inputs):
     plt.ylim(0,1.03)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f'scaled_single_score_multi_{db_type}.jpg'), bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'scaled_single_score_multi_{db_type}.png'), bbox_inches='tight')
     plt.show()
 
 def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns):
@@ -273,7 +273,7 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
 
             # print(gwp_tot, lst_GWP)
             lst_GWP.append(gwp_tot)
-            lst_x.append('Total')
+            lst_x.append('Net impact')
             x_axis.append(lst_x)
             GWP_value.append(lst_GWP)
 
@@ -299,8 +299,8 @@ def process_categorizing(df_GWP, db_type, database_name, case, flow_legend, colu
     df = pd.DataFrame(list(key_dic.items()), columns=['Category', 'Value'])
 
     # Separate 'Total' values from the rest
-    totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Total']
-    df = df[df['Category'].apply(lambda x: x[1]) != 'Total']
+    totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Net impact']
+    df = df[df['Category'].apply(lambda x: x[1]) != 'Net impact']
 
     # Pivot the DataFrame to have a stacked format
     df_stacked = df.pivot_table(index=[df['Category'].apply(lambda x: x[0])], columns=[df['Category'].apply(lambda x: x[1])], values='Value', aggfunc='sum').fillna(0)
@@ -422,7 +422,7 @@ def gwp_lc_plot(df_GWP, category_mapping, categories, inputs, y_axis_values):
             ax.legend(handles=[v for k, v in legend_handles_for_display], labels=[k for k, v in legend_handles_for_display], bbox_to_anchor=(1.005, 1), loc='upper left')
 
         plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f'GWP_life_stage_{db_type}.jpg'), bbox_inches='tight')
+        plt.savefig(os.path.join(save_dir, f'GWP_life_stage_{db_type}.png'), bbox_inches='tight')
         plt.show()
         
 
@@ -437,7 +437,7 @@ def category_organization(database_name):
         "Use": ["Disinfection", "Autoclave"],
         "Recycling": ["Recycling"],
         "EoL": ["Incineration", "Avoided energy prod.", "Avoided mat. prod." ],
-        "Total": ["Total"]
+        "Net impact": ["Net impact"]
         }
     
     elif 'case2' in database_name or 'model' in database_name:
@@ -445,14 +445,107 @@ def category_organization(database_name):
         "Raw mat. + prod.": ["Raw mat. + prod."],
         "Use": ["Use",  "Disinfection",  "Ster. consumables", "Ster. autoclave"],
         "EoL": ["Incineration", "Avoided energy prod."],
-        "Total": ["Total"]
+        "Net impact": ["Net impact"]
         }
 
     return category_mapping        
 
 # Function to plot the global warming potentials showing the contribution of each life stage
-def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
+def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
+    # Configure general plot settings
+    plt.rcParams.update({
+    'font.size': 12,      # General font size
+    'axes.titlesize': 14, # Title font size
+    'axes.labelsize': 12, # Axis labels font size
+    'legend.fontsize': 10 # Legend font size
+    }) 
+    flow_legend, colors, save_dir, db_type, database_name = inputs
+
+    # Extract columns and indices for plotting
+    columns_to_plot = df_scaled.columns
+    index_list = list(df_scaled.index.values)
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(7, 5))
+    bar_width = 1 / (len(index_list) + 1)
+    index = np.arange(len(columns_to_plot))
+
+    # Plot each group of bars
+    for i, process in enumerate(df_scaled.index):
+        values = df_scaled.loc[process, columns_to_plot].values
+        color = colors[i % len(colors)]  # Ensure color cycling
+        ax.bar(index + i * bar_width, values, bar_width, label=process, color=color)
+
+    # Format impact category string
+    lcia_string = impact_category[0][0]
+    lcia_string = lcia_string.replace(' Runes edition', '').replace('ReCiPe 2016 v1.03, ', '')
+
+    # Format database type
+    if 'cut' in db_type.lower():
+        db_type = db_type.replace('_', '-').capitalize()
+    else:
+        db_type = db_type.upper()
+
+    # Set title and labels
+    ax.set_title(
+        f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',
+         fontsize=14
+    )
+
+     
+    ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
+    ax.set_xticklabels(plot_x_axis, fontsize=10)
     
+
+    # Set x-axis limits based on case type
+    if 'case1' in database_name:
+        ax.set_xlim(-0.2, len(columns_to_plot))
+    elif 'case2' in database_name:
+        ax.set_xlim(-0.35, len(columns_to_plot) - 0.3)
+    else:
+        ax.set_xlim(0, len(columns_to_plot))
+
+    # Customize tick sizes
+    
+    plt.yticks(fontsize=11)
+
+    if 'endpoint' in lcia_string.lower():
+        plt.xticks(rotation=0, fontsize=11)
+        x_pos = -0.05
+    else:
+        plt.xticks(rotation=90, fontsize=11)
+        x_pos = -0.17
+
+    # Configure legend placement and formatting
+    if len(df_scaled.index) <= 6:
+        ax.legend(
+            flow_legend,
+            loc='upper center',
+            bbox_to_anchor=(0.5, x_pos),
+            ncol= len(df_scaled.index),  # Adjust the number of columns based on legend size
+            fontsize=10,
+            frameon=False
+        )
+    else:
+        ax.legend(
+            flow_legend,
+            loc='upper center',
+            bbox_to_anchor=(0.5, x_pos),
+            ncol= len(df_scaled.index)/2,  # Adjust the number of columns based on legend size
+            fontsize=10,
+            frameon=False
+        )
+
+    # Save the plot with high resolution
+    output_file = os.path.join(
+        save_dir,
+        f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.png'
+    )
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300, format='png', bbox_inches='tight')
+    plt.show()
+
+def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     # Using the inputs to specify the different variables
     flow_legend = inputs[0]
     colors = inputs[1]
@@ -460,57 +553,67 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     db_type = inputs[3]
     database_name = inputs[4]
 
-    columns = lc.unique_elements_list(database_name)
+    plt.rcParams.update({
+    'font.size': 12,      # General font size
+    'axes.titlesize': 14, # Title font size
+    'axes.labelsize': 12, # Axis labels font size
+    'legend.fontsize': 10 # Legend font size
+    }) 
 
+    columns = lc.unique_elements_list(database_name)
     df_stack_updated, totals_df = process_categorizing(df_GWP, db_type, database_name, '', flow_legend, columns)
 
-    y_min = y_axis_values[0]
-    y_max = y_axis_values[1]
-    steps = y_axis_values[2]
-    leg_pos = y_axis_values[3]
-    marker_offset = y_axis_values[4]
-    marker_color = y_axis_values[5]
+    y_min, y_max, steps, leg_pos, marker_offset, marker_color = y_axis_values
 
     # Plotting the stacked bar chart
-    ax = df_stack_updated.plot(kind='bar', stacked=True, figsize=(10, 6), color=colors)
-    ax.axhline(y = 0, color = 'k', linestyle = '-', zorder=0, linewidth=0.5) # https://matplotlib.org/stable/gallery/misc/zorder_demo.html
-    
-    # Plotting 'Total' values as dots and including it in the legend
-    for flow in flow_legend:
-        for idx, row in totals_df.iterrows():
-            if flow in row['Category'][0]:
-                unit = row['Category'][0]
-                total = row['Value']
-                ax.plot(unit, total, 'D', color=marker_color, markersize=6,  mec = 'k', label='Total' if idx == 0 else "")
-                # Add the data value
-                ax.text(unit, total - marker_offset, f"{total:.2f}", 
-                        ha='center', va='bottom', fontsize=10, 
-                        color = marker_color, weight = 'bold') # https://www.datacamp.com/tutorial/python-round-to-two-decimal-places?utm_source=google&utm_medium=paid_search&utm_campaignid=19589720824&utm_adgroupid=157156376311&utm_device=c&utm_keyword=&utm_matchtype=&utm_network=g&utm_adpostion=&utm_creative=684592140434&utm_targetid=dsa-2218886984100&utm_loc_interest_ms=&utm_loc_physical_ms=9197406&utm_content=&utm_campaign=230119_1-sea~dsa~tofu_2-b2c_3-row-p2_4-prc_5-na_6-na_7-le_8-pdsh-go_9-nb-e_10-na_11-na-oct24&gad_source=1&gclid=Cj0KCQiA_qG5BhDTARIsAA0UHSK7fmd8scMcHSkG_VMO1TWmeHapAM6cjV1QobZKKYotZPX7IcmJRF4aAhsyEALw_wcB
+    fig, ax = plt.subplots(figsize=(7, 5))  # Adjusted for single-column width (~3.54 inches at 300 dpi)
+    df_stack_updated.plot(kind='bar', stacked=True, ax=ax, color=colors, zorder=2)
+    ax.axhline(y=0, color='k', linestyle='-', zorder=0, linewidth=0.5)
 
-    
+    # Plotting 'Total' values as dots and including it in the legend
+    for idx, row in totals_df.iterrows():
+        unit = row['Category'][0]
+        total = row['Value']
+        ax.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label='Net impact' if idx == 0 else "")
+        # Add the data value
+        ax.text(
+            unit, total - marker_offset, f"{total:.2f}", 
+            ha='center', va='bottom', fontsize=10, 
+            color=marker_color)
 
     # Custom legend with 'Total' included
     handles, labels = ax.get_legend_handles_labels()
+    handles.append(
+        plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color, mec='k', markersize=4, label='Net impact')
+    )
 
-    handles.append(plt.Line2D([0], [0], marker='D', color='w', markerfacecolor=marker_color,  mec = 'k', markersize=6, label='Total'))
-    ax.legend(labels=columns, handles=handles, bbox_to_anchor=(1.01, leg_pos, .24, 0), loc="lower left", mode="expand", borderaxespad=0, ncol=1, fontsize=10.5)
+    ax.legend(
+        labels=columns,
+        handles=handles,
+        loc="upper center",  # Place legend at the bottom center
+        bbox_to_anchor=(0.5, -0.08),  # Adjust position to below the x-axis
+        ncol=3,  # Display legend entries in 3 columns
+        fontsize=10.5,
+        frameon=False  # Remove the legend box
+    )
 
+    # Adjust database type for title
     if 'cut' in db_type.lower():
-        db_type = db_type.replace('_', '-')
-        db_type = db_type.capitalize()
+        db_type = db_type.replace('_', '-').capitalize()
     else:
-        db_type= db_type.upper()
-   
-    
+        db_type = db_type.upper()
+
     # Setting labels and title
-    plt.title(f'GWP impact of each life stage for 1 FU ({db_type})', weight='bold', fontsize = 14)
-    
-    plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]', weight='bold', fontsize = 11)
-    plt.yticks(np.arange(y_min, y_max + 0.01, step=steps), fontsize = 11)
-    plt.ylim(y_min-0.05, y_max+0.05)
-    plt.xticks(rotation=0, fontsize = 11)
+    plt.title(f'GWP Impact of Each Life Stage for 1 FU ({db_type})',  fontsize=14)
+    plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]',  fontsize=12)
+    plt.yticks(np.arange(y_min, y_max + 0.01, step=steps), fontsize=11)
+    plt.ylim(y_min - 0.05, y_max + 0.05)
+    plt.xticks(rotation=0, fontsize=11)
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.jpg'), bbox_inches='tight')
+
+    # Save the figure
+    filename = os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.png')
+    plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
     plt.show()
 
 def break_even_orginization(df_be, database_name):
@@ -584,6 +687,13 @@ def break_even_graph(df_GWP, inputs, plot_structure):
     case = 'break even'
     df_be, ignore = process_categorizing(df_GWP, db_type, database_name, case, flow_legend, columns)
 
+    plt.rcParams.update({
+            'font.size': 12,      # General font size
+            'axes.titlesize': 14, # Title font size
+            'axes.labelsize': 12, # Axis labels font size
+            'legend.fontsize': 10 # Legend font size
+            }) 
+
     if 'case1' in database_name:
         df_be_copy = break_even_orginization(df_be, database_name)
         # Split index into small and large based on criteria
@@ -624,8 +734,8 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                             for u in range(1, amount_of_uses + 1)]
 
             # Plot results
-            _, ax = plt.subplots(figsize=(10, 6))
-
+            _, ax = plt.subplots(figsize=(7, 5))
+            
             
 
             for idx, (key, value) in enumerate(be_dct.items()):
@@ -644,10 +754,16 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                 db_type= db_type.upper()
 
             # Customize plot
-            ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-            plt.title(f'Break even for the {scenario_name} {break_even_product} ({db_type})', weight = 'bold')
-            plt.xlabel('Cycle(s)',  weight = 'bold')
-            plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
+            ax.legend(
+                loc="upper center",  # Place legend at the bottom center
+                bbox_to_anchor=(0.5, -0.15),  # Adjust position to below the x-axis
+                ncol=4,  # Display legend entries in 3 columns
+                fontsize=10.5,
+                frameon=False  # Remove the legend box
+            )
+            plt.title(f'Break even for the {scenario_name} {break_even_product} ({db_type})')
+            plt.xlabel('Cycle(s)',  )
+            plt.ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
             plt.xlim(0, amount_of_uses)
             plt.xticks(range(0, amount_of_uses, xstep))
 
@@ -656,7 +772,8 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             plt.tight_layout()
 
             # Save and display plot
-            plt.savefig(os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.jpg'), bbox_inches='tight')
+            filename = os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.png')
+            plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
             plt.show()
 
         
@@ -683,7 +800,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                         for u in range(1, amount_of_uses + 1)]
 
         # Plot results
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(7, 5))
 
         
 
@@ -703,10 +820,16 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             db_type= db_type.upper()
 
         # Customize plot
-        ax.legend(bbox_to_anchor=(1.00, 1.017), loc='upper left')
-        plt.title(f'Break even for the {break_even_product} ({db_type})', weight = 'bold')
-        plt.xlabel('Cycle(s)',  weight = 'bold')
-        plt.ylabel('Accumulated Global Warming Potential [kg CO$_2$e]',  weight = 'bold')
+        ax.legend(
+                loc="upper center",  # Place legend at the bottom center
+                bbox_to_anchor=(0.5, -0.15),  # Adjust position to below the x-axis
+                ncol=4,  # Display legend entries in 3 columns
+                fontsize=10.5,
+                frameon=False  # Remove the legend box
+            )
+        plt.title(f'Break even for the {break_even_product} ({db_type})', )
+        plt.xlabel('Cycle(s)',  )
+        plt.ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]',  )
         plt.xlim(0, amount_of_uses)
         plt.xticks(range(0, amount_of_uses +1, xstep))
 
@@ -714,9 +837,12 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         plt.yticks(range(0, y_max[0] + 1, ystep[0]))
         plt.tight_layout()
 
+
         # Save and display plot
-        plt.savefig(os.path.join(save_dir, f'break_even_bipolar_{db_type}.jpg'), bbox_inches='tight')
+        filename = os.path.join(save_dir, f'break_even_bipolar_{db_type}.png')
+        plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
         plt.show()
+   
 
 def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_categories, flow_legend, plot_structure):
     leg_pos_scal, leg_pos_gwp_, y_min_gwp, y_max_gwp, y_step_gwp, amount_of_uses, y_max_be, y_step_be, x_step_be_, be_product = plot_structure
@@ -740,16 +866,18 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
         df_col = [df_mid.columns[1]]
         df_GWP = df_mid[df_col]
 
-        colors_ini = plot_colors(database_name, 'turbo')
+        # colors_ini = plot_colors(database_name, 'turbo')
 
-        colors = [colors_ini[0],
-                colors_ini[3],
-                colors_ini[2],
-                colors_ini[1],
-                colors_ini[4],
-                ]
-        for c in colors_ini[5:]:
-            colors.append(c)
+        # colors = [colors_ini[0],
+        #         colors_ini[3],
+        #         colors_ini[2],
+        #         colors_ini[1],
+        #         colors_ini[4],
+        #         ]
+        # for c in colors_ini[5:]:
+        #     colors.append(c)
+        cmap = plt.get_cmap('Accent')
+        colors = [cmap(i) for i in np.linspace(0, 1, 9)]
         inputs = [flow_legend[key], colors, save_dir[key], item[4], database_name]
 
         scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_categories[key], leg_pos_scaled[key])
@@ -758,12 +886,12 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
             df_tot_e, df_scaled_e = lc.dataframe_element_scaling(df_endpoint)
             scaled_FU_plot(df_scaled_e, plot_x_axis_end, inputs, impact_categories[key][-3:], leg_pos_scaled[key])
 
-        marker_offset = 0.1
-        marker_color = 'aliceblue'
+        marker_offset = 0.15
+        marker_color = 'k'
         y_axis_values = [y_min_gwp[key], y_max_gwp[key], y_step_gwp[key], leg_pos_gwp[key], marker_offset, marker_color]
         gwp_scenario_plot(df_GWP, inputs, y_axis_values)
 
-        color_idx = [0, 2, 4, 6]
+        color_idx = [0, 1, 2, 4]
 
         plot_controls = [life_time_use[key], y_max_be[key], y_step_be[key], x_step_be[key], break_even_product[key], color_idx]
         break_even_graph(df_GWP, inputs, plot_controls)
