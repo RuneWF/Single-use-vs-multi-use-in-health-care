@@ -153,63 +153,6 @@ def break_even_flow_seperation(x, gwp, db_type, database_name):
 
     return x, gwp
 
-# # Function to create the scaled FU plot
-# def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_position):
-#     plt.rc('axes', labelsize=10) 
-#     flow_legend = inputs[0]
-#     colors = inputs[1]
-#     save_dir = inputs[2]
-#     db_type = inputs[3]
-#     database_name = inputs[4]
-
-#     # Extracting the columns plot
-#     columns_to_plot = df_scaled.columns
-
-#     index_list = list(df_scaled.index.values)
-
-#     # Plotting
-#     _, ax = plt.subplots(figsize=(12, 6))
-
-#     bar_width = 1/(len(index_list) + 1) 
-#     index = np.arange(len(columns_to_plot))
-
-#     # Plotting each group of bars
-#     for i, process in enumerate(df_scaled.index):
-#         values = df_scaled.loc[process, columns_to_plot].values
-#         ax.bar((index + i * bar_width), values, bar_width, label=process, color=colors[i])  
-    
-#     lcia_string = impact_category[0][0]
-#     lcia_string = lcia_string.replace(' Runes edition', '')
-#     lcia_string = lcia_string.replace('ReCiPe 2016 v1.03, ','')
-#     if 'cut' in db_type.lower():
-#         db_type = db_type.replace('_', '-')
-#         db_type = db_type.capitalize()
-#     else:
-#         db_type= db_type.upper()
-
-#     # Setting labels and title
-#     ax.set_title(f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',fontsize=14)
-#     ax.set_xticks(index + bar_width * (len(index_list)-1) / 2)
-#     ax.set_xticklabels(plot_x_axis, fontsize=10)
-#     if 'case1' in database_name:
-#         ax.set_xlim(-0.2, len(columns_to_plot))
-#     elif 'case2' in database_name:
-#         ax.set_xlim(-0.35, len(columns_to_plot) -0.3)
-#     else:
-#         ax.set_xlim(0, len(columns_to_plot))
-
-#     # Specifying the direction of the text on the axis should be rotated
-#     plt.xticks(rotation=0)
-#     # Setting the legend
-#     ax.legend(flow_legend,bbox_to_anchor=(1.01, legend_position, .1, 0), loc="lower left",
-#                 mode="expand", borderaxespad=0,  ncol=1, fontsize=10.5)
-#     plt.xticks(fontsize = 11)
-#     plt.yticks(fontsize = 11)
-#     # Saving and showing the plot
-#     plt.tight_layout()
-#     plt.savefig(os.path.join(save_dir, f'scaled_impact_score_multi_{db_type}_{impact_category[0][0]}.png'), bbox_inches='tight')
-#     plt.show()
-
 # Function for single score plot for EF LCIA results
 def single_score_plot(directory, df_tot, inputs):
 
@@ -741,9 +684,9 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             for idx, (key, value) in enumerate(be_dct.items()):
                 try:
                     if 'H' in key:
-                        ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], markersize=3.5)
+                        ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], linewidth=3)
                     else:
-                        ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
+                        ax.plot(value, label=key, color=colors[color_idx[idx]], linewidth=3)
                 except IndexError:
                     print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
             
@@ -808,9 +751,9 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             # if color_idx == 0:
             try:
                 if 'RMD' in key or 'SUD' in key:
-                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], markersize=3.5)
+                    ax.plot(value, label=key,linestyle='dashed', color=colors[color_idx[idx] % len(colors)], linewidth=3)
                 else:
-                    ax.plot(value, label=key, color=colors[color_idx[idx]], markersize=3.5)
+                    ax.plot(value, label=key, color=colors[color_idx[idx]], linewidth=3)
             except IndexError:
                 print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
         if 'cut' in db_type.lower():
@@ -862,20 +805,10 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
             plot_x_axis, plot_x_axis_end = plot_x_axis_lst
 
 
-        df_tot, df_scaled = lc.dataframe_element_scaling(df_mid)
+        _, df_scaled = lc.dataframe_element_scaling(df_mid)
         df_col = [df_mid.columns[1]]
         df_GWP = df_mid[df_col]
 
-        # colors_ini = plot_colors(database_name, 'turbo')
-
-        # colors = [colors_ini[0],
-        #         colors_ini[3],
-        #         colors_ini[2],
-        #         colors_ini[1],
-        #         colors_ini[4],
-        #         ]
-        # for c in colors_ini[5:]:
-        #     colors.append(c)
         cmap = plt.get_cmap('Accent')
         colors = [cmap(i) for i in np.linspace(0, 1, 9)]
         inputs = [flow_legend[key], colors, save_dir[key], item[4], database_name]
@@ -883,7 +816,7 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
         scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_categories[key], leg_pos_scaled[key])
 
         if 'recipe' in item[3].lower():
-            df_tot_e, df_scaled_e = lc.dataframe_element_scaling(df_endpoint)
+            _, df_scaled_e = lc.dataframe_element_scaling(df_endpoint)
             scaled_FU_plot(df_scaled_e, plot_x_axis_end, inputs, impact_categories[key][-3:], leg_pos_scaled[key])
 
         marker_offset = 0.15
