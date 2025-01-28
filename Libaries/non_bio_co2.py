@@ -9,8 +9,8 @@ def remove_bio_co2_recipe():
     # Obtaining the endpoint categories and ignoring land transformation
     endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H)' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
 
-    method_name_new_mid= all_methods[0][0] + ' Runes edition'
-    method_name_new_end = endpoint[0][0] + ' Runes edition'
+    method_name_new_mid= all_methods[0][0] + ' - no biogenic'
+    method_name_new_end = endpoint[0][0] + ' - no biogenic'
 
     #Checking if OG is present in endpoint and then deleting it
     if 'OG' in method_name_new_end:
@@ -44,7 +44,7 @@ def remove_bio_co2_recipe():
                         recipe_no_bio_CO2.append((cf_name, 0))
 
                 # registering the new method for later use
-                new_metod = (metod[0] + ' Runes edition', metod[1], metod[2])
+                new_metod = (metod[0] + ' - no biogenic', metod[1], metod[2])
                 new_method_key = new_metod
                 new_method = bw.Method(new_method_key)
                 new_method.register()

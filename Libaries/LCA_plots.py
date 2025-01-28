@@ -11,13 +11,13 @@ from  standards import *
 import life_cycle_assessment as lc
 importlib.reload(lc)
 
+def join_path(path1, path2):
+    return os.path.join(path1, path2)
+
 # Function to update the flow name and simplify them
 def flow_name_update(x, gwp, db_type, database_name):
     x_og = x
-    # x_lst = []
-    # if x not in x_lst:
-    #     x_lst.append(x)
-    #     print(x)
+
 
     if 'case1' in database_name:
         
@@ -55,7 +55,6 @@ def flow_name_update(x, gwp, db_type, database_name):
 
     elif 'case2' in database_name or 'model' in database_name:
         if 'H200' in x:
-            print(x, gwp)
             x = 'Ster. consumables' 
         if 'autoclave' in x.lower():
             x = 'Ster. autoclave' 
@@ -430,10 +429,10 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
         db_type = db_type.upper()
 
     # Set title and labels
-    ax.set_title(
-        f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',
-         fontsize=14
-    )
+    # ax.set_title(
+    #     f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',
+    #      fontsize=14
+    # )
 
      
     ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
@@ -506,7 +505,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     columns = lc.unique_elements_list(database_name)
     df_stack_updated, totals_df = process_categorizing(df_GWP, db_type, database_name, '', flow_legend, columns)
 
-    y_min, y_max, steps, leg_pos, marker_offset, marker_color = y_axis_values
+    y_min, y_max, steps, _, marker_offset, marker_color = y_axis_values
 
     # Plotting the stacked bar chart
     fig, ax = plt.subplots(figsize=(7, 5))  # Adjusted for single-column width (~3.54 inches at 300 dpi)
@@ -547,7 +546,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
         db_type = db_type.upper()
 
     # Setting labels and title
-    plt.title(f'GWP Impact of Each Life Stage for 1 FU ({db_type})',  fontsize=14)
+    # plt.title(f'GWP Impact of Each Life Stage for 1 FU ({db_type})',  fontsize=14)
     plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]',  fontsize=12)
     plt.yticks(np.arange(y_min, y_max + 0.01, step=steps), fontsize=11)
     plt.ylim(y_min - 0.05, y_max + 0.05)
@@ -555,7 +554,7 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
     plt.tight_layout()
 
     # Save the figure
-    filename = os.path.join(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.png')
+    filename = join_path(save_dir, f'GWP_life_stage_pr_scenario_{db_type}.png')
     plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
     plt.show()
 
@@ -704,7 +703,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                 fontsize=10.5,
                 frameon=False  # Remove the legend box
             )
-            plt.title(f'Break even for the {scenario_name} {break_even_product} ({db_type})')
+            # plt.title(f'Break even for the {scenario_name} {break_even_product} ({db_type})')
             plt.xlabel('Cycle(s)',  )
             plt.ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
             plt.xlim(0, amount_of_uses)
@@ -715,7 +714,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             plt.tight_layout()
 
             # Save and display plot
-            filename = os.path.join(save_dir, f'break_even_{scenario_name}_{db_type}.png')
+            filename = join_path(save_dir, f'break_even_{scenario_name}_{db_type}.png')
             plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
             plt.show()
 
@@ -770,7 +769,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                 fontsize=10.5,
                 frameon=False  # Remove the legend box
             )
-        plt.title(f'Break even for the {break_even_product} ({db_type})', )
+        # plt.title(f'Break even for the {break_even_product} ({db_type})', )
         plt.xlabel('Cycle(s)',  )
         plt.ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]',  )
         plt.xlim(0, amount_of_uses)
@@ -782,7 +781,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
 
 
         # Save and display plot
-        filename = os.path.join(save_dir, f'break_even_bipolar_{db_type}.png')
+        filename = join_path(save_dir, f'break_even_bipolar_{db_type}.png')
         plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
         plt.show()
    
@@ -797,6 +796,7 @@ def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_
     break_even_product = {key: be_name for case, be_name in be_product.items() for key in initialization.keys() if case in key}
 
     for key, item in initialization.items():
+        print(f"Creating figures for {key}")
         database_name = item[1]
 
         df_res, plot_x_axis_lst = lc.dataframe_results_handling(df[key], database_name, plot_x_axis_all[key], item[3])

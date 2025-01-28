@@ -23,8 +23,8 @@ def sterilization_min_max(database_type, autoclave_gwp):
     df_gwp = df_tot[gwp_col].to_frame()
     df_sens = dc(df_gwp)
 
-    min = None
-    max = None
+    min = 0
+    max = 0
     min_auto = 0
     max_auto = 0
 
@@ -37,34 +37,33 @@ def sterilization_min_max(database_type, autoclave_gwp):
                 val /= 4
             else:
                 val /= 6
-            if max is None or min is None:
-                min = val
-                max = val
+            # if max is None or min is None:
+            #     min = val
+            #     max = val
 
-            elif val < min:
+            if val < min or min == 0:
                 min = val
                 min_idx = idx
                 if '2' in idx:
-                    min_auto = 12 * 4
+                    min_auto = 28 * 4
                 elif '4' in idx:
-                    min_auto = 8 *6
+                    min_auto = 13 *6
                 elif 'S' in idx:
-                    min_auto = 9 * 4
+                    min_auto = 14 * 4
                 else:
-                    min_auto = 6 * 6
-                
+                    min_auto = 7 * 6
 
-            elif val > max:
+            if val > max:
                 max = val
                 max_idx = idx
                 if '2' in idx:
-                    max_auto = 18 *4
+                    max_auto = 14 * 4
                 elif '4' in idx:
-                    max_auto = 9 * 6
+                    max_auto = 7 * 6
                 elif 'S' in idx:
-                    max_auto = 12 * 4
+                    max_auto = 9 * 4
                 else:
-                    max_auto = 9 * 6
+                    max_auto = 5 * 6
                 
                 
     autoclave_gwp_min = autoclave_gwp/min_auto
@@ -93,8 +92,7 @@ def uncertainty_case2(val_dct, df_be, df):
                                 row[col] *= 250 / dct[idx][val]
                                 
                             elif ir == 'autoclave' and 'autoclave' in col.lower() and 'SUD' not in idx:
-                                print(ir, cr, idx, col)
-                                row[col] *= (12*4) / dct[idx][val]
+                                row[col] *= (14*4) / dct[idx][val]
                             elif ir == 'sterilization' and 'consumables' in col and 'SUD' not in idx:
                                 row[col] = dct[idx][val]
                             elif ir == 'cabinet washer' and 'Disinfection' in col and 'SUD' not in idx:

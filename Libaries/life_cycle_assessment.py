@@ -14,27 +14,46 @@ import LCA_plots as lp
 import non_bio_co2 as nbc
 import import_ecoinvent_and_databases as ied
 
-def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="single use vs multi use"):
-    ied.database_setup(ecoinevnt_paths, system_path)
-    
-    ui1 = int(input('select 1 for case1 and 2 for case2'))
+import os
 
-    # Specifying if it is CONSQ (consequential) or APOS
-    ui2 = int(input('select 1 for apos and 2 for consequential and 3 for cut off'))
-    if ui2 == 1:
-        db_type = 'apos'
-    elif ui2 == 2:
-        db_type = 'consq'
-    elif ui2 == 3:
-        db_type = 'cut_off'
-    
-    
-    database_project = bw_project
-    database_name = f'case{ui1}' + '_' + db_type
+def join_path(path1, path2):
+    return os.path.join(path1, path2)
 
-    # Creating the flow legend
-    if 'case1' in database_name:
-        flow_legend = [
+def is_valid_flow(temp, flow):
+    return (('H2' in temp or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow)
+
+def get_all_flows(path, lcia_meth, bw_project="single use vs multi use", case_range=range(1, 3)):
+    bd.projects.set_current(bw_project)
+    db_type = ['apos', 'consq', 'cut_off']
+
+    flows = {}
+    save_dir = {}
+    database_name_dct = {}
+    file_name = {}
+    db_type_dct = {}
+    flow_legend = {}
+    file_name_unique_process = {}
+    sheet_name = {}
+    initialization = {}
+    for nr in case_range:
+
+
+        for tp in db_type:
+            database_name = f'case{nr}' + '_' + tp
+            database_name_dct[database_name] = database_name
+            db = bd.Database(database_name)
+            # print(database_name)
+            flow = []
+            if 'case1' in str(db):
+                for act in db:
+                    temp = act['name']
+                    # print(flow)
+                    if is_valid_flow(temp, flow):
+                        flow.append(temp)
+                    elif 'alubox' in temp and '+' in temp and 'eol' not in temp.lower():
+                        flow.append(temp)
+                flow.sort()
+                flow_leg = [
                     'H2S',
                     'H2R',
                     'ASC',
@@ -44,45 +63,51 @@ def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="s
                     'ALC',
                     'ALW'
                     ]
-        file_identifier = 'case1'
-        
-    else:
-        flow_legend = ['SUD', 'MUD']
-        file_identifier = 'case2'
+                
+                sheet_name[database_name] = 'case1'
+            elif 'case2' in str(db):
+                for act in db:
+                    temp = act['name']
+                    if temp == 'SUD' or temp == 'MUD':
+                        flow.append(temp)
+                    flow_leg = ['SUD', 'MUD']
+                    sheet_name[database_name] = 'case2'
+                flow.sort()
+                flow.reverse()
 
-    # Specifying the file name and sheet name
+            flows[database_name] = flow
+            dir_temp = results_folder(join_path(path,'results'), f"case{nr}", tp)
+            save_dir[database_name] = dir_temp
+            file_name[database_name] = join_path(dir_temp, f"data_case{nr}_{tp}_recipe.xlsx") # f'{dir_temp}\data_case{nr}_{tp}_recipe.xlsx'
+            db_type_dct[database_name] = tp
+            flow_legend[database_name] = flow_leg
+            file_name_unique_process[database_name] = join_path(dir_temp, f"data_uniquie_case{nr}_{tp}_{lcia_meth}.xlsx") #f'{dir_temp}\data_uniquie_case{nr}_{tp}_{lcia_meth}.xlsx'
+            initialization[database_name] = [bw_project, database_name, flow, lcia_meth, tp]
+
+    lst = [save_dir, file_name, flow_legend, file_name_unique_process, sheet_name]
     
-    sheet_name = f'{file_identifier}'
+    return lst, initialization
 
-    # Creating the saving directory for the results
-    save_dir = results_folder(path+'\\results', file_identifier, db_type)
-    file_name = f'{save_dir}\data_{file_identifier}_{db_type}_{lcia_method}.xlsx'
-    ui2 = int(input(f'Select 1 to choose flows based on {db_type}, else 2 for choosing them yourself'))
-    if ui2 == 1:
-        flows = get_database_type_flows(database_name)
-    elif ui2 == 2:
-        flows = get_user_specific_flows(database_name)
-    
-    print('Chosen flows:')
-    for f in flows:
-        print(f)
+def initilization(path, lcia_method, ecoinevnt_paths, system_path):
+    ied.database_setup(ecoinevnt_paths, system_path)
 
-    initialization = [database_project, database_name, flows, lcia_method, db_type]
-    file_name_unique_process = f'{save_dir}\data_uniquie_{file_identifier}_{db_type}_{lcia_method}.xlsx'
+    lst, initialization = get_all_flows(path, lcia_method)
+    save_dir, file_name, flow_legend, file_name_unique_process, sheet_name = lst
 
     return flow_legend, file_name, sheet_name, save_dir, initialization, file_name_unique_process
 
 # Function to obtain the LCIA category to calculate the LCIA results
-def lcia_method(method):
+def lcia_impact_method(method):
     # Checking if the LCIA method is ReCiPe, and ignores difference between lower and upper case 
     if 'recipe' in method.lower():
+
         # Using H (hierachly) due to it has a 100 year span
         # Obtaining the midpoint categpries and ignoring land transformation (Land use still included)
         nbc.remove_bio_co2_recipe()
-        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H) Runes edition' in str(m) and 'no LT' not in str(m)] # Midpoint
+        all_methods = [m for m in bw.methods if 'ReCiPe 2016 v1.03, midpoint (H) - no biogenic' in str(m) and 'no LT' not in str(m)] # Midpoint
 
         # Obtaining the endpoint categories and ignoring land transformation
-        endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H) Runes edition' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
+        endpoint = [m for m in bw.methods if 'ReCiPe 2016 v1.03, endpoint (H) - no biogenic' in str(m) and 'no LT' not in str(m) and 'total' in str(m)]
 
         # Combining midpoint and endpoint, where endpoint is added to the list of the midpoint categories
         for meth in endpoint:
@@ -129,8 +154,6 @@ def get_database_type_flows(database: str):
     return flow
 
 def get_user_specific_flows(database: str):
-    # Setting brightway to the given project
-
     # Specifiyng which database to use
     db = bd.Database(database)
 
@@ -178,7 +201,7 @@ def LCA_initialization(database_name: str, flows: list, method: str) -> tuple:
         key_counter += 1
     
     # Obtaing the impact categories for the LCIA calculations
-    impact_category = lcia_method(method)
+    impact_category = lcia_impact_method(method)
     
     # obtaing a shortened version of the impact categories for the plots
     plot_x_axis = [0] * len(impact_category)
@@ -197,22 +220,17 @@ def LCA_initialization(database_name: str, flows: list, method: str) -> tuple:
             for exc in proc.exchanges():
                 if 'Use' in exc.output['name'] and exc['type'] == 'biosphere':
                     product_details[proc['name']].append({exc.input['name']: [exc['amount'], exc.input]})
-                    # if exc.input in eidb or exc.input in eidb_db or exc.input in eidb_cyl:
-                    #     product_details_code[proc['name']].append([exc.output, exc.output['name'], exc.output['code'], exc['amount']])
+
                 elif exc['type'] == 'technosphere':
                     product_details[proc['name']].append({exc.input['name']: [exc['amount'], exc.input]})
-                    # if exc.input in eidb or exc.input in eidb_db or exc.input in eidb_cyl:
-                    #     product_details_code[proc['name']].append([exc.input, exc.input['name'], exc.input['code'], exc['amount']])
-
-
-
+        
     FU = {key: {} for key in product_details.keys()}
     # Creating the FU to calculate for
     for key, item in product_details.items():
         for idx in item:
-            for n, m in idx.items():
+            for  m in idx.values():
                 FU[key].update({m[1]: m[0]})
-    print('Initialization is completed')
+    print(f'Initialization is completed for {database_name}')
     return FU, impact_category
 
 # saving the LCIA results to excel
@@ -225,26 +243,23 @@ def save_LCIA_results(df, file_name, sheet_name, impact_category):
 
     # Save to Excel
     with pd.ExcelWriter(file_name) as writer:
-        df_save.to_excel(writer, sheet_name=sheet_name, index=False, header=True)
+        df_save.to_excel(writer, sheet_name=sheet_name, index=True, header=True)
 
     print('DataFrame with nested lists written to Excel successfully.')
 
-    with open("impact_categories", "w") as fp:
-        json.dump(impact_category, fp)
 
 # Function to import the LCIA results from excel
-def import_LCIA_results(file_name, flow, impact_category):
+def import_LCIA_results(file_name, impact_category):
     
     if type(impact_category) == tuple:
         impact_category = [impact_category]
     
     # Reading from Excel
-    df = pd.read_excel(file_name)
+    df = pd.read_excel(io=file_name, index_col=0)
 
     # Convert JSON strings back to lists for all columns
     df = df.map(lambda x: json.loads(x) if isinstance(x, str) and x.startswith('[') else x)
     # Setting the index to the flow
-    df = df.set_axis(flow, axis=0)
 
     # Updating column names
     df.columns = impact_category
@@ -282,14 +297,12 @@ def dataframe_element_scaling(df):
     df_cols = df_tot.columns
     df_cols = df_cols.to_list()
 
-    #df_norm = pd.DataFrame().reindex_like(df_tot) #https://stackoverflow.com/questions/23195250/create-empty-dataframe-with-same-dimensions-as-another
     df_scaled = copy.deepcopy(df_tot)
 
     # Obtaing the scaled value of each LCIA results in each column to the max
     for i in df_cols:
         scaling_factor = max(abs(df_scaled[i]))
-        # print(df_tot[i])
-        for idx, row in df_scaled.iterrows():
+        for _, row in df_scaled.iterrows():
             row[i] /= scaling_factor
 
     return df_tot, df_scaled
@@ -367,6 +380,7 @@ def rearrange_dataframe_index(df, database):
             for row_counter, idx in enumerate(df_rearranged.index):
                 rearranged_val = df.at[idx, col] # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.at.html#pandas.DataFrame.at
                 df_rearranged.iloc[row_counter, icol] = rearranged_val
+
         return df_rearranged
     else:
         # If rearrnge is not chosen it returns the same dataframe as inputtet
@@ -400,16 +414,12 @@ def rearrange_dataframe_index_user_specific(df):
         impact_category = df.columns
         df_rearranged = pd.DataFrame(0, index=idx_lst, columns=impact_category, dtype=object)
 
-
         # Arranging the dataframe to the new dataframe
         for icol, col in enumerate(impact_category):
             for row_counter, idx in enumerate(df_rearranged.index):
                 rearranged_val = df.at[idx, col] # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.at.html#pandas.DataFrame.at
                 df_rearranged.iloc[row_counter, icol] = rearranged_val
-                # row_counter += 1
-                
-                # if row_counter == len(idx_dct):  # Reset when all flows have been processed in the column
-                #     row_counter = 0
+
         return df_rearranged
     else:
         # If rearrnge is not chosen it returns the same dataframe as inputtet

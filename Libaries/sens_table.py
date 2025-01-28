@@ -24,13 +24,11 @@ def column_sum_dataframe(df_sensitivity_v):
         for idx, row in df_sensitivity_v.iterrows():
             if idx != 'total':
                 tot_dct[col] += row[col]
-        # print(col, tot_dct[col])
     return tot_dct
 
 def sensitivity_table_results(totals_df, idx_sens, col_to_df, df_sensitivity_v):
     tot_lst = {}
     for tidx in totals_df.index:
-        # print(tidx, totals_df.at[tidx, 'Value'])
         tot_lst[tidx] = totals_df.at[tidx, 'Value']
 
     df_sensitivity_p = pd.DataFrame(0, index=idx_sens, columns=col_to_df, dtype=object)
@@ -52,7 +50,6 @@ def sensitivity_table_results(totals_df, idx_sens, col_to_df, df_sensitivity_v):
                     sens = tot - val
                 else:
                     sens = tot + val
-                # print(idx, col, sens, tot, val)
                 df_sensitivity_p.at[idx, col] = (val - tot)/tot*100
             elif 'total' in idx:
                 if 'lower' in col:
@@ -71,7 +68,7 @@ def sensitivity_table_results(totals_df, idx_sens, col_to_df, df_sensitivity_v):
     return df_sensitivity_p
 
 def autoclave_gwp_impact_case1(variables, path):
-    database_name, df_GWP, db_type, save_dir, flows, impact_category = variables
+    database_name, _, db_type, _, flows, impact_category = variables
     db = bd.Database(database_name)
     unique_process_index = []
     for act in db:

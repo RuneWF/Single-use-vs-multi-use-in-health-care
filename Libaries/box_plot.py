@@ -104,10 +104,10 @@ def box_plot(path, inputs, plot_structure):
 
     # Set general font size parameters
     plt.rcParams.update({
-        'font.size': 12,      # General font size
-        'axes.titlesize': 14, # Title font size
-        'axes.labelsize': 12, # Axis labels font size
-        'legend.fontsize': 10 # Legend font size
+        'font.size': 16,      # General font size
+        'axes.titlesize': 18, # Title font size
+        'axes.labelsize': 16, # Axis labels font size
+        'legend.fontsize': 14 # Legend font size
     })
 
     # Read the data
@@ -166,14 +166,13 @@ def box_plot(path, inputs, plot_structure):
         loc='upper center',
         bbox_to_anchor=(0.5, 0),  # Adjust positioning below the plot
         ncol=3,
-        fontsize=10.5,
         frameon=False
     )
 
     # Customize labels, ticks, and limits
-    plt.ylabel(plot_label, fontsize=12)
+    plt.ylabel(plot_label)
     ax.get_xaxis().set_visible(False)  # Hide x-axis since it's not meaningful here
-    plt.yticks(np.arange(y_min, y_max + 0.001, step=ystep), fontsize=11)
+    plt.yticks(np.arange(y_min, y_max + 0.001, step=ystep))
     plt.ylim(y_min - 0.001, y_max + 0.005)
 
     # Save the plot
