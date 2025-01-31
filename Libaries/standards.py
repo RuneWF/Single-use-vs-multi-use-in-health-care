@@ -18,9 +18,14 @@ def swap_rows(df, row1, row2):
     df.iloc[row1], df.iloc[row2] =  df.iloc[row2].copy(), df.iloc[row1].copy()
     return df
 
-def results_folder(path, name, db):
-    save_dir = f'{path}\{name}_{db}'
-    temp = f'{name}_{db}'
+def results_folder(path, name, db=None):
+    if db != None:
+        save_dir = f'{path}\{name}_{db}'
+        temp = f'{name}_{db}'
+    else:
+        save_dir = f'{path}\{name}'
+        temp = f'{name}'
+
     try:
         if os.path.exists(save_dir):
              print(f'{temp} already exist')

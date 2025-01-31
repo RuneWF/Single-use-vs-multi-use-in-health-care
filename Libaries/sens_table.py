@@ -80,7 +80,7 @@ def autoclave_gwp_impact_case1(variables, path):
     unique_process_index.sort()
     save_dir_case1 = s.results_folder(path+'\\results', 'case1', db_type)
     results_path = os.path.join(save_dir_case1, f"data_uniquie_case1_{db_type}_recipe.xlsx")
-    df_unique = lc.import_LCIA_results(results_path, unique_process_index, impact_category)
+    df_unique = lc.import_LCIA_results(results_path, impact_category)
     autoclave_gwp = None
     for location in ["DK", "GLO", "RER"]:
         try:

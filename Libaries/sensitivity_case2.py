@@ -10,14 +10,14 @@ from copy import deepcopy as dc
 
 
 def sterilization_min_max(database_type, autoclave_gwp):
-    impact_category = lc.lcia_method('recipe')
+    impact_category = lc.lcia_impact_method('recipe')
     # df_unique = autoclave_gwp_impact(save_dir, database_type)
 
 
     database_name = f'case1_{database_type}'
     flow = lc.get_database_type_flows(database_name)
     file_name = f'C:\\Users\\ruw\\Desktop\\RA\\Single-use-vs-multi-use-in-health-care\\results\\case1_{database_type}\\data_case1_{database_type}_recipe.xlsx'
-    df = lc.import_LCIA_results(file_name, flow, impact_category)
+    df = lc.import_LCIA_results(file_name, impact_category)
     df_tot, df_scaled = lc.dataframe_element_scaling(df)
     gwp_col = df_tot.columns[1]
     df_gwp = df_tot[gwp_col].to_frame()

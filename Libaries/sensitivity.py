@@ -106,10 +106,49 @@ def initilization(path, lcia_method):
         flows, database_name, db_type, save_dir, file_name = get_all_flows(path)
         return flows, database_name, db_type, save_dir, file_name
 
+def break_even_initialization(path, lcia_method):
+    # Reloading the self made libaries to ensure they are up to date
+    flows, database_name, db_type, save_dir, file_name = initilization(path, lcia_method)
+    # initialization = [database_project, database_name, flows, lcia_method, db_type]
+    impact_category = lc.lcia_impact_method(lcia_method)
+    if type(flows) is list:
+        # Extracting the variables used
+        
+        
 
+        # Importing the results data frame
+        df = lc.import_LCIA_results(file_name, flows, impact_category)
 
+        df_rearranged = lc.rearrange_dataframe_index(df, database=database_name)
+        if 'recipe' in lcia_method:
+            df_res, df_endpoint = lc.recipe_dataframe_split(df_rearranged)
+        else:
+            df_res = df_rearranged
 
+        # seperating the GWP potential from the resy
+        df_col = [df_res.columns[1]]
+        df_GWP = df_res[df_col]
 
+        variables = [database_name, df_GWP, db_type, save_dir, flows, impact_category]
+    else:
+        variables = {}
+        for db, (key, item) in enumerate(flows.items()):
+            
+            # Importing the results data frame
+            df = lc.import_LCIA_results(file_name[key], impact_category)
+
+            df_rearranged = lc.rearrange_dataframe_index(df, database_name[db])
+            if 'recipe' in lcia_method:
+                df_res, df_endpoint = lc.recipe_dataframe_split(df_rearranged)
+            else:
+                df_res = df_rearranged
+
+            # seperating the GWP potential from the resy
+            df_col = [df_res.columns[1]]
+            df_GWP = df_res[df_col]
+
+            variables[key] = [database_name[db], df_GWP, db_type[key], save_dir[key], flows[key], impact_category]
+    return variables
 
 def uncertainty_graph(variables, lib, y_axis):
     rl.reload_lib(lib)

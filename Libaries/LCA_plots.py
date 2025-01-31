@@ -3,13 +3,21 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 from matplotlib.lines import Line2D  # Import for creating custom legend markers
-import importlib
 import os
 from copy import deepcopy as dc
 
 from  standards import *
 import life_cycle_assessment as lc
-importlib.reload(lc)
+
+def plot_title_text(lca_type):
+    if 'apos' in lca_type:
+        return 'Allocation at the point of substitution'
+    elif 'consq' in lca_type:
+        return 'Consequential'
+    elif 'cut' in lca_type:
+        return 'Allocation cut-off by Classification'
+    else:
+        return ''
 
 def join_path(path1, path2):
     return os.path.join(path1, path2)
@@ -51,7 +59,8 @@ def flow_name_update(x, gwp, db_type, database_name):
             x = "Avoided mat. prod."
         if 'wipe' in x or 'mechanical disinfection' in x:
             x = 'Disinfection'
-
+        if '18/8' in x:
+            x = "Avoided mat. prod."
 
     elif 'case2' in database_name or 'model' in database_name:
         if 'H200' in x:
@@ -422,17 +431,8 @@ def scaled_FU_plot(df_scaled, plot_x_axis, inputs, impact_category, legend_posit
     lcia_string = impact_category[0][0]
     lcia_string = lcia_string.replace(' Runes edition', '').replace('ReCiPe 2016 v1.03, ', '')
 
-    # Format database type
-    if 'cut' in db_type.lower():
-        db_type = db_type.replace('_', '-').capitalize()
-    else:
-        db_type = db_type.upper()
-
     # Set title and labels
-    # ax.set_title(
-    #     f'Scaled Impact of the Functional Unit - {lcia_string.capitalize()} ({db_type})',
-    #      fontsize=14
-    # )
+    ax.set_title(plot_title_text(db_type), fontsize=14)
 
      
     ax.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
@@ -538,15 +538,8 @@ def gwp_scenario_plot(df_GWP, inputs, y_axis_values):
         fontsize=10.5,
         frameon=False  # Remove the legend box
     )
-
-    # Adjust database type for title
-    if 'cut' in db_type.lower():
-        db_type = db_type.replace('_', '-').capitalize()
-    else:
-        db_type = db_type.upper()
-
     # Setting labels and title
-    # plt.title(f'GWP Impact of Each Life Stage for 1 FU ({db_type})',  fontsize=14)
+    ax.set_title(plot_title_text(db_type), fontsize=14)
     plt.ylabel('Global Warming Potential [kg CO$_2$e/FU]',  fontsize=12)
     plt.yticks(np.arange(y_min, y_max + 0.01, step=steps), fontsize=11)
     plt.ylim(y_min - 0.05, y_max + 0.05)
@@ -688,12 +681,6 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                         ax.plot(value, label=key, color=colors[color_idx[idx]], linewidth=3)
                 except IndexError:
                     print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
-            
-            if 'cut' in db_type.lower():
-                db_type = db_type.replace('_', '-')
-                db_type = db_type.capitalize()
-            else:
-                db_type= db_type.upper()
 
             # Customize plot
             ax.legend(
@@ -703,7 +690,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                 fontsize=10.5,
                 frameon=False  # Remove the legend box
             )
-            # plt.title(f'Break even for the {scenario_name} {break_even_product} ({db_type})')
+            ax.set_title(f"{scenario_name.capitalize()} - {plot_title_text(db_type)}", fontsize=14)
             plt.xlabel('Cycle(s)',  )
             plt.ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
             plt.xlim(0, amount_of_uses)
@@ -755,11 +742,6 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                     ax.plot(value, label=key, color=colors[color_idx[idx]], linewidth=3)
             except IndexError:
                 print(f'Color index of {color_idx[idx]} is out of range, choose a value between 0 and {len(colors) - 1}')        
-        if 'cut' in db_type.lower():
-            db_type = db_type.replace('_', '-')
-            db_type = db_type.capitalize()
-        else:
-            db_type= db_type.upper()
 
         # Customize plot
         ax.legend(
@@ -769,7 +751,7 @@ def break_even_graph(df_GWP, inputs, plot_structure):
                 fontsize=10.5,
                 frameon=False  # Remove the legend box
             )
-        # plt.title(f'Break even for the {break_even_product} ({db_type})', )
+        ax.set_title(f"{plot_title_text(db_type)}", fontsize=14)
         plt.xlabel('Cycle(s)',  )
         plt.ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]',  )
         plt.xlim(0, amount_of_uses)
@@ -785,7 +767,6 @@ def break_even_graph(df_GWP, inputs, plot_structure):
         plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
         plt.show()
    
-
 def create_results_graphs(initialization, df, plot_x_axis_all, save_dir, impact_categories, flow_legend, plot_structure):
     leg_pos_scal, leg_pos_gwp_, y_min_gwp, y_max_gwp, y_step_gwp, amount_of_uses, y_max_be, y_step_be, x_step_be_, be_product = plot_structure
     
