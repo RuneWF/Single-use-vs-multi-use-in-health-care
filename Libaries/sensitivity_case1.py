@@ -71,17 +71,17 @@ def case1_initilazation(df_be):
 
     for idx in df_be.index:
         if '2' in idx:
-            val_dct['autoclave'].update({idx : [28, 14]})
+            val_dct['autoclave'].update({idx : [14, 28]})
             val_dct['protection cover'].update({idx : [63/1000, 71/1000]})
         elif '4' in idx:
-            val_dct['autoclave'].update({idx : [13,7]})
+            val_dct['autoclave'].update({idx : [7,13]})
             val_dct['protection cover'].update({idx : [190/1000, 202/1000]})
         elif 'S' in idx:
             val_dct['Life time'].update({idx : [314, 827]})
-            val_dct['autoclave'].update({idx : [14, 9]})
+            val_dct['autoclave'].update({idx : [9, 14]})
         else:
             val_dct['Life time'].update({idx : [314, 827]})
-            val_dct['autoclave'].update({idx : [7, 5]})
+            val_dct['autoclave'].update({idx : [5, 7]})
 
         col_to_df.append(f'{idx} - lower%')
         col_to_df.append(f'{idx} - upper%')

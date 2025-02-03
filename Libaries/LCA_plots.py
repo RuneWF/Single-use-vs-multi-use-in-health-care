@@ -665,8 +665,13 @@ def break_even_graph(df_GWP, inputs, plot_structure):
             # Calculate break-even values
             be_dct = {}
             for key, usage in production.items():
-                be_dct[key] = [usage if u == 1 else use_cycle.get(key, usage) * u + usage
-                            for u in range(1, amount_of_uses + 1)]
+                be_dct[key] = []
+                for u in range(1, amount_of_uses + 1):
+                    # if u == 1:
+                    #     be_dct[key].append(usage)
+                    # else:
+                    be_dct[key].append(use_cycle.get(key, usage) * u + usage)
+               
 
             # Plot results
             _, ax = plt.subplots(figsize=(7, 5))
