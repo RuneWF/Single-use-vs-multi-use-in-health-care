@@ -599,11 +599,11 @@ def color_range():
 def legend_text(text):
     if '1' in text:
         flow_leg = [
-                        'H2S',
+                        'H2I',
                         'H2R',
                         'ASC',
                         'ASW',
-                        'H4S',
+                        'H4I',
                         'H4R',
                         'ALC',
                         'ALW'

@@ -128,11 +128,11 @@ def calculate_sensitivity_values(variables, autoclave_gwp):
     database_name, df_GWP, db_type, save_dir, impact_category, flows = variables
     if 'case1' in database_name:
             flow_legend = [
-                        'H2S',
+                        'H2I',
                         'H2R',
                         'ASC',
                         'ASW',
-                        'H4S',
+                        'H4I',
                         'H4R',
                         'ALC',
                         'ALW'

@@ -37,21 +37,6 @@ def sterilization_min_max(database_type, autoclave_gwp):
                 val /= 4
             else:
                 val /= 6
-            # if max is None or min is None:
-            #     min = val
-            #     max = val
-
-            if val < min or min == 0:
-                min = val
-                min_idx = idx
-                if '2' in idx:
-                    min_auto = 28 * 4
-                elif '4' in idx:
-                    min_auto = 13 *6
-                elif 'S' in idx:
-                    min_auto = 14 * 4
-                else:
-                    min_auto = 7 * 6
 
             if val > max:
                 max = val
@@ -64,11 +49,25 @@ def sterilization_min_max(database_type, autoclave_gwp):
                     max_auto = 9 * 4
                 else:
                     max_auto = 5 * 6
+        
+            if val < min or min == 0:
+                min = val
+                min_idx = idx
+                if '2' in idx:
+                    min_auto = 28 * 4
+                elif '4' in idx:
+                    min_auto = 13 *6
+                elif 'S' in idx:
+                    min_auto = 14 * 4
+                else:
+                    min_auto = 7 * 6
+
+            
                 
                 
     autoclave_gwp_min = autoclave_gwp/min_auto
     autoclave_gwp_max = autoclave_gwp/max_auto
-    min_max_lst = [min - autoclave_gwp_min, max - autoclave_gwp_max]
+    min_max_lst = [max - autoclave_gwp_max, min - autoclave_gwp_min]
     min_max_auto = [min_auto, max_auto]
 
     print(f"lowest impact : {min_idx}, highest impact : {max_idx}")
@@ -137,7 +136,7 @@ def case2_initilazation(df_be, database_type, autoclave_gwp):
             val_dct['surgery time'].update({idx : [use_elec_var[0], use_elec_var[1]]})
         else:
             val_dct['Life time'].update({idx : [50, 500]})
-            val_dct['autoclave'].update({idx : min_max_auto})
+            val_dct['autoclave'].update({idx : [30, 112]})
             val_dct['cabinet washer'].update({idx : [32, 48]})
             val_dct['sterilization'].update({idx : min_max_lst})
             val_dct['surgery time'].update({idx : [use_elec_var[0], use_elec_var[1]]})
