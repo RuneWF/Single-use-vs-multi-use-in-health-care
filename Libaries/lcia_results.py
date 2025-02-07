@@ -7,6 +7,11 @@ import copy
 # Importing self-made libaries
 from standards import *
 from life_cycle_assessment import *
+import LCA_plots as lp
+import sensitivity as st
+
+
+
 
 
 
@@ -204,3 +209,41 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     df = lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_unique, unique_process_index, initialization, FU, functional_unit, flows)
 
     return df, plot_x_axis_all, impact_categories
+
+def df_index(key):
+    if '1' in key:
+        flow_leg = [
+                    'H2S',
+                    'H2R',
+                    'ASC',
+                    'ASW',
+                    'H4S',
+                    'H4R',
+                    'ALC',
+                    'ALW'
+                    ]
+        return flow_leg
+    else:
+        return ['SUD', 'MUD']
+    
+
+def break_even_dataframe(file_path, lcia_method='recipe'):
+    variables = st.break_even_initialization(file_path, lcia_method)
+    with pd.ExcelWriter(file_path) as writer:
+        for key in variables.keys():
+            df_GWP = variables[key][1]
+            db_type = variables[key][2]
+            database_name = variables[key][0]
+            
+            flow_legend = variables[key][4]
+            columns = variables[key][-1]
+
+            columns = unique_elements_list(database_name)
+
+            df_be, ignore = lp.process_categorizing(df_GWP, db_type, database_name, 'break even', flow_legend, columns)
+            df_be.index = df_index(key)
+            df_be_copy = lp.break_even_orginization(df_be, database_name)
+            
+            # Write each DataFrame to a different sheet
+            sheet_name = f"{key}"
+            df_be_copy.to_excel(writer, sheet_name=sheet_name, index=True, header=True)

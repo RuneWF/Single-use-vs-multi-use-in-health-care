@@ -44,7 +44,7 @@ def uncertainty_case1(df_sensitivity, val_dct, df_be, totals_df, idx_sens, col_t
                             elif 'AL' in cr:
                                     row[col] *=  5 / dct[idx][val]
                         elif ir == 'protection cover' and idx in cr and 'A' not in idx and 'Disinfection' not in col and 'Autoclave' not in col and 'Recycling' not in col :
-                            row[col] *= dct[idx][val] / dct[idx][1]
+                            row[col] *= dct[idx][val] / dct[idx][0]
             df_temp = df_sens.loc[cr[:3]].to_frame().T
             df_dct[cr].update({ir : df_temp})
 
@@ -72,10 +72,10 @@ def case1_initilazation(df_be):
     for idx in df_be.index:
         if '2' in idx:
             val_dct['autoclave'].update({idx : [14, 28]})
-            val_dct['protection cover'].update({idx : [63/1000, 71/1000]})
+            val_dct['protection cover'].update({idx : [71/1000, 63/1000]})
         elif '4' in idx:
             val_dct['autoclave'].update({idx : [7,13]})
-            val_dct['protection cover'].update({idx : [190/1000, 202/1000]})
+            val_dct['protection cover'].update({idx : [202/1000, 190/1000]})
         elif 'S' in idx:
             val_dct['Life time'].update({idx : [314, 827]})
             val_dct['autoclave'].update({idx : [9, 14]})

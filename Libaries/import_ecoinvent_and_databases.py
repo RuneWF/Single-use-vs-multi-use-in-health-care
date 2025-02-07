@@ -64,7 +64,7 @@ def reload_database(sheet_name, system_path):
          print('Invalid argument, try again')
          reload_database(sheet_name, system_path)
 
-def database_setup(ecoinevnt_paths, system_path, bw_project="single use vs multi use", sheet_name = ['ev391apos', 'ev391consq', 'ev391cutoff']):
+def database_setup(ecoinevnt_paths, system_path, bw_project="Single Use vs Multi Use", sheet_names = ['ev391apos', 'ev391consq', 'ev391cutoff']):
     bd.projects.set_current(bw_project)
 
     if any("biosphere" in db for db in bd.databases):
@@ -94,19 +94,18 @@ def database_setup(ecoinevnt_paths, system_path, bw_project="single use vs multi
         ei.write_database() #save the database to our hard drive
 
     
+    
    
     for path in system_path:    
-        db_path = path 
-        for db in sheet_name:
-            # print(idx+1, db)
+        for sheet in sheet_names:
             # Read the Excel file
-            data = pd.read_excel(db_path, sheet_name=db)
+            data = pd.read_excel(path, sheet_name=sheet)
             
             import_excel_database_to_brightway.has_been_called = False  
             if data.columns[1] not in bd.databases:
-                import_excel_database_to_brightway(data, db)
+                import_excel_database_to_brightway(data, sheet)
     
     if import_excel_database_to_brightway.has_been_called is False:
-        reload_database(sheet_name, system_path)
+        reload_database(sheet_names, system_path)
         
     

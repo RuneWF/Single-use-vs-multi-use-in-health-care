@@ -22,7 +22,7 @@ def join_path(path1, path2):
 def is_valid_flow(temp, flow):
     return (('H2' in temp or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow)
 
-def get_all_flows(path, lcia_meth, bw_project="single use vs multi use", case_range=range(1, 3)):
+def get_all_flows(path, lcia_meth, bw_project="Single Use vs Multi Use", case_range=range(1, 3)):
     bd.projects.set_current(bw_project)
     db_type = ['apos', 'consq', 'cut_off']
 
