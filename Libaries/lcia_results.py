@@ -1,49 +1,50 @@
 import bw2data as bd
 import bw2calc as bc
-
 import pandas as pd
 import copy
 
-# Importing self-made libaries
+# Importing self-made libraries
 from standards import *
 from life_cycle_assessment import *
-import LCA_plots as lp
+from results_figures import *
 import sensitivity as st
 
-
-
-
-
-
 def quick_LCIA_calculator(unique_process_index, func_unit, impact_categories, file_name_unique, sheet_name, case):
+    # Ensure impact categories is a list
     if isinstance(impact_categories, tuple):
         impact_categories = [ic for ic in impact_categories]
+    
+    # Initialize DataFrame to store results
     df_unique = pd.DataFrame(0, index=unique_process_index, columns=impact_categories, dtype=object)
 
-    print(f'Total amount of calculations {len(impact_categories) * len(func_unit)}' )
-    bd.calculation_setups[f'calc_setup_{case}'] = {'inv':func_unit, 'ia': impact_categories}
+    print(f'Total amount of calculations {len(impact_categories) * len(func_unit)}')
+    
+    # Set up and perform the LCA calculation
+    bd.calculation_setups[f'calc_setup_{case}'] = {'inv': func_unit, 'ia': impact_categories}
     mylca = bc.MultiLCA(f'calc_setup_{case}')
     res = mylca.results
+    
+    # Store results in DataFrame
     for col, arr in enumerate(res):
         for row, val in enumerate(arr):
             df_unique.iat[col, row] = val
 
-    # Specifying the file name and sheet name
+    # Save results to file
     save_LCIA_results(df_unique, file_name_unique, sheet_name, impact_categories)
 
     return df_unique
 
 def redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_name):
-    database_project, database_name, flows, lcia_method, db_type =  initialization
+    database_project, database_name, flows, lcia_method, db_type = initialization
     functional_unit, impact_category, plot_x_axis_all = LCA_initialization(database_project, database_name, flows, lcia_method, db_type)
-
 
     # Ensure impact categories is a list
     impact_categories = list(impact_category) if isinstance(impact_category, tuple) else impact_category
 
-    unique_process= []
+    unique_process = []
     unique_process_index = []
-    # Find matches in functional units and calculate LCA
+    
+    # Identify unique processes
     for func_dict in functional_unit:
         for FU_item in func_dict.values():
             for proc in FU_item.keys():
@@ -53,10 +54,9 @@ def redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_
     
     unique_process_index.sort()
 
+    unique_process_ordered = [0] * len(unique_process)
 
-    unique_process_ordered= [0] * len(unique_process)
-
-    # Extracting all the unique process
+    # Order unique processes
     for i, upi in enumerate(unique_process_index):
         for proc in unique_process:
             if upi == f'{proc}':
@@ -64,44 +64,45 @@ def redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_
                 
     redo_func_unit = []
     process_index = []
-    # Asking the user which activities shall be recalculated
+    
+    # Ask user which activities to recalculate
     for idx in unique_process_ordered:
-        user_input = input(f'Do you want to redo the calculation for {idx}? [y/n]') # https://www.w3schools.com/python/python_user_input.asp
+        user_input = input(f'Do you want to redo the calculation for {idx}? [y/n]')
         if 'y' in user_input.lower():
-            redo_func_unit.append({idx : 1})
+            redo_func_unit.append({idx: 1})
             process_index.append(f'{idx}')
-        
 
-
+    # Initialize DataFrame for recalculated results
     df_unique_redone = pd.DataFrame(0, index=process_index, columns=impact_categories, dtype=object)
 
-    print(f'Calculating for {len(impact_categories)} methods and {len(redo_func_unit)} activities : Total calculations {len(impact_categories) * len(redo_func_unit)}' )
-    # Performing the LCA calculation and saving the results in a dataframe
-    bd.calculation_setups['calc_setup'] = {'inv':redo_func_unit, 'ia': impact_categories}
+    print(f'Calculating for {len(impact_categories)} methods and {len(redo_func_unit)} activities: Total calculations {len(impact_categories) * len(redo_func_unit)}')
+    
+    # Perform the LCA calculation and store results
+    bd.calculation_setups['calc_setup'] = {'inv': redo_func_unit, 'ia': impact_categories}
     mylca = bc.MultiLCA('calc_setup')
     res = mylca.results
     for col, arr in enumerate(res):
         for row, val in enumerate(arr):
             df_unique_redone.iat[col, row] = val
 
-
-    # Inserting the recalculated results in the orginal dataframe
+    # Insert recalculated results into original DataFrame
     df_unique_copy = copy.deepcopy(df_unique)
     for col in impact_categories:
         for row in df_unique_redone.itertuples():
             df_unique_copy.at[row.Index, col] = getattr(row, col)
 
+    # Save updated results to file
     save_LCIA_results(df_unique_copy, file_name_unique, sheet_name, impact_categories)
     
     return df_unique_copy
 
 def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_unique, unique_process_index, initialization, FU, functional_unit, flows):
-    # Check if file exists
     user_input = ''
     
-    if os.path.isfile(file_name_unique): # https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-without-exceptions
-        # Import LCIA results
+    # Check if file exists
+    if os.path.isfile(file_name_unique):
         try:
+            # Import LCIA results
             df_unique = import_LCIA_results(file_name_unique, impact_categories)
             user_input = input(f"Do you want to redo the calculations for some process in {initialization[1]}?\n"
                                "Options:\n"
@@ -113,23 +114,17 @@ def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_
             
             if 'y' in user_input.lower():
                 df_unique = redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_name)
-    
             elif 'a' in user_input.lower():
-                df_unique= quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name, case=initialization[1])
-            
-            
-
-        except (ValueError, KeyError, TypeError) as e: # Recalculating everything if the saved dataframe does not have the same amount of process as the now
+                df_unique = quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name, case=initialization[1])
+        except (ValueError, KeyError, TypeError) as e:
             print(e)
             df_unique = quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name, case=initialization[1])
     else:
         print(f"{file_name_unique} do not exist, but will be created now")
         df_unique = quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name, case=initialization[1])
 
-    
     if 'n' in user_input.lower():
-                df = import_LCIA_results(file_name, impact_categories)  
-
+        df = import_LCIA_results(file_name, impact_categories)
     else:
         df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
 
@@ -157,7 +152,6 @@ def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_
                         except ValueError:
                             print(f'value error for {proc}')
         
-            
         save_LCIA_results(df, file_name, sheet_name, impact_categories)   
 
     return df
@@ -178,14 +172,13 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     _, database_name, flows, lcia_method, db_type = initialization
     functional_unit, impact_category = LCA_initialization(database_name, flows, lcia_method)
 
-
     # Ensure impact categories is a list
     impact_categories = list(impact_category) if isinstance(impact_category, tuple) else impact_category
-    # Loop through each impact category and flow
     
     unique_process_index = []
-    unique_process= []
+    unique_process = []
 
+    # Identify unique processes
     for exc in functional_unit.values():
         for proc in exc.keys():
             if str(proc) not in unique_process_index:
@@ -194,14 +187,13 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     
     unique_process_index.sort()
 
-
     FU = []
     for upi in unique_process_index:
         for proc in unique_process:
             if upi == f'{proc}':
                 FU.append({proc: 1})
 
-    # obtaing a shortened version of the impact categories for the plots
+    # Obtain a shortened version of the impact categories for the plots
     plot_x_axis_all = [0] * len(impact_categories)
     for i in range(len(plot_x_axis_all)):
         plot_x_axis_all[i] = impact_categories[i][2]
@@ -225,24 +217,25 @@ def df_index(key):
         return flow_leg
     else:
         return ['SUD', 'MUD']
-    
 
-def break_even_dataframe(file_path, lcia_method='recipe'):
-    variables = st.break_even_initialization(file_path, lcia_method)
+def break_even_dataframe(be_path, case, lcia_method='recipe'):
+    file = s.join_path(be_path,'results')
+    file_path = s.join_path(file, f'{case}\\break_even_data_{case}.xlsx')
+
+    variables = st.break_even_initialization(be_path, lcia_method)
+
     with pd.ExcelWriter(file_path) as writer:
         for key in variables.keys():
             df_GWP = variables[key][1]
-            db_type = variables[key][2]
             database_name = variables[key][0]
-            
             flow_legend = variables[key][4]
             columns = variables[key][-1]
 
             columns = unique_elements_list(database_name)
 
-            df_be, ignore = lp.process_categorizing(df_GWP, db_type, database_name, 'break even', flow_legend, columns)
+            df_be, ignore = process_categorizing(df_GWP, case, flow_legend, columns)
             df_be.index = df_index(key)
-            df_be_copy = lp.break_even_orginization(df_be, database_name)
+            df_be_copy = break_even_orginization(df_be, database_name)
             
             # Write each DataFrame to a different sheet
             sheet_name = f"{key}"

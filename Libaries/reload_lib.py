@@ -1,7 +1,16 @@
 import importlib
 
 def reload_lib(lib):
-    # https://dev.to/fronkan/importlib-reload-for-resting-modules-between-tests-neh
+    """
+    Reloads the specified libraries.
+
+        Parameters:
+        lib (list): A list of libraries (modules) to reload.
+    """
     for l in lib:
-        importlib.reload(l)
+        if isinstance(l, type(importlib)):
+            importlib.reload(l)
+        else:
+            print(f"Warning: {l} is not a module and cannot be reloaded.")
+
     

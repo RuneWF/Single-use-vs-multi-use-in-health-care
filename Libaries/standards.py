@@ -1,46 +1,46 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import os
-from LCA_plots import category_organization
 
-def plot_colors(database_name, color):
-    temp_dct = category_organization(database_name)
-    uniqie_elements = []
-    for lst in temp_dct.values():
-        for item in lst:
-            uniqie_elements.append(item)
-    cmap = plt.get_cmap(color)
-    colors = [cmap(i) for i in np.linspace(0, 1, len(uniqie_elements))]
-    return colors
 
-# https://scales.arabpsychology.com/stats/how-do-you-swap-two-rows-in-pandas/
-def swap_rows(df, row1, row2):
-    df.iloc[row1], df.iloc[row2] =  df.iloc[row2].copy(), df.iloc[row1].copy()
-    return df
-
+# Function to create a results folder with a specified path and name
 def results_folder(path, name, db=None):
-    if db != None:
-        save_dir = f'{path}\{name}_{db}'
+    # Determine the save directory and folder name based on the presence of a database name
+    if db is not None:
+        save_dir = f'{path}/{name}_{db}'
         temp = f'{name}_{db}'
     else:
-        save_dir = f'{path}\{name}'
+        save_dir = f'{path}/{name}'
         temp = f'{name}'
 
     try:
+        # Check if the directory already exists
         if os.path.exists(save_dir):
-             print(f'{temp} already exist')
+            print(f'{temp} already exist')
         else:
             # Create the directory if it doesn't exist
             os.makedirs(save_dir, exist_ok=True)
             print(f'The folder {temp} is created')
     
-    except UnboundLocalError:
-        print('Error occured')
+    except (OSError, FileExistsError) as e:
+        # Handle potential UnboundLocalError
+        print('Error occurred')
     print(save_dir)
     return save_dir
 
+def join_path(path1, path2):
+    return os.path.join(path1, path2)
 
 
+def paths(path):
+    # Path to where the code is stored
+    path_github = join_path(path, r'RA\Single-use-vs-multi-use-in-health-care')
+    # Specifying the LCIA method
 
-
-
+    ecoinevnt_paths = {'ev391apos' : join_path(path, r"4. semester\EcoInvent\ecoinvent 3.9.1_apos_ecoSpold02\datasets"),
+                    'ev391consq' :   join_path(path, r"4. semester\EcoInvent\ecoinvent 3.9.1_consequential_ecoSpold02\datasets"),
+                    'ev391cutoff' :  join_path(path, r"4. semester\EcoInvent\ecoinvent 3.9.1_cutoff_ecoSpold02\datasets")}
+    system_path = [
+            join_path(path_github, r'Data\databases\case1.xlsx'), 
+            join_path(path_github, r"Data\databases\case2.xlsx")
+                ]
+    
+    return path_github, ecoinevnt_paths, system_path

@@ -2,9 +2,6 @@
 import pandas as pd
 from copy import deepcopy as dc
 
-# Importing self-made libaries
-import sens_table as tab
-
 def uncertainty_case1(df_sensitivity, val_dct, df_be, totals_df, idx_sens, col_to_df):
     """
     Perform sensitivity analysis for case 1.
@@ -53,39 +50,53 @@ def uncertainty_case1(df_sensitivity, val_dct, df_be, totals_df, idx_sens, col_t
 
 
 def case1_initilazation(df_be):
+    """
+    Initialize the sensitivity analysis for case 1.
+
+    Parameters:
+    df_be (pd.DataFrame): DataFrame containing break-even analysis data.
+
+    Returns:
+    tuple: A tuple containing the initialized DataFrame, value dictionary, index list, and column list.
+    """
+    # Define the indices for sensitivity analysis
     idx_sens = [
-            'Life time',
-            'autoclave',
-            'protection cover',
-            'total'
-        ]
+        'Life time',
+        'autoclave',
+        'protection cover',
+        'total'
+    ]
 
-
+    # Initialize the dictionary to store sensitivity values
     val_dct = {
-        'Life time' : {},
-        'autoclave' : {},
-        'protection cover' : {}
+        'Life time': {},
+        'autoclave': {},
+        'protection cover': {}
     }
 
+    # Initialize the list to store column names
     col_to_df = []
 
+    # Populate the value dictionary and column list based on the break-even DataFrame index
     for idx in df_be.index:
         if '2' in idx:
-            val_dct['autoclave'].update({idx : [14, 28]})
-            val_dct['protection cover'].update({idx : [71/1000, 63/1000]})
+            val_dct['autoclave'].update({idx: [14, 28]})
+            val_dct['protection cover'].update({idx: [71/1000, 63/1000]})
         elif '4' in idx:
-            val_dct['autoclave'].update({idx : [7,13]})
-            val_dct['protection cover'].update({idx : [202/1000, 190/1000]})
+            val_dct['autoclave'].update({idx: [7, 13]})
+            val_dct['protection cover'].update({idx: [202/1000, 190/1000]})
         elif 'S' in idx:
-            val_dct['Life time'].update({idx : [314, 827]})
-            val_dct['autoclave'].update({idx : [9, 14]})
+            val_dct['Life time'].update({idx: [314, 827]})
+            val_dct['autoclave'].update({idx: [9, 14]})
         else:
-            val_dct['Life time'].update({idx : [314, 827]})
-            val_dct['autoclave'].update({idx : [5, 7]})
+            val_dct['Life time'].update({idx: [314, 827]})
+            val_dct['autoclave'].update({idx: [5, 7]})
 
+        # Add lower and upper percentage columns for each index
         col_to_df.append(f'{idx} - lower%')
         col_to_df.append(f'{idx} - upper%')
 
+    # Create an empty DataFrame with the specified indices and columns
     df = pd.DataFrame(0, index=idx_sens, columns=col_to_df, dtype=object)
 
     return df, val_dct, idx_sens, col_to_df
