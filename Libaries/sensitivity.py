@@ -420,8 +420,7 @@ def iterative_save_sensitivity_results_to_excel(path, case):
     variables = break_even_initialization(path, 'recipe')
     # Obtain the autoclave GWP impacts for case1
     autoclave_gwp_dct = obtain_case1_autoclave_gwp(variables, path)
-    # df_dct = {}
-    # df_dct_be = {}
+    df_dct = {}
 
     # Iterate over each case in the variables dictionary
     for key, item in variables.items():
@@ -432,7 +431,7 @@ def iterative_save_sensitivity_results_to_excel(path, case):
             # Save sensitivity results for case2
             df_sens = save_sensitivity_to_excel(item, case, autoclave_gwp_dct[key])
         
-    #     # Store the sensitivity DataFrame in the dictionary
-    #     df_dct[key] = df_sens
+        # Store the sensitivity DataFrame in the dictionary
+        df_dct[key] = df_sens
 
-    # return df_dct, df_dct_be
+    return df_dct

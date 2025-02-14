@@ -12,10 +12,6 @@ def remove_bio_co2_recipe():
     method_name_new_mid= all_methods[0][0] + ' - no biogenic'
     method_name_new_end = endpoint[0][0] + ' - no biogenic'
 
-    #Checking if OG is present in endpoint and then deleting it
-    if 'OG' in method_name_new_end:
-            method_name_new_end = method_name_new_end.replace(f'OG ', '')
-
     # Checking if the method exist
     if method_name_new_mid not in [m[0] for m in list(bd.methods)] or method_name_new_end not in [m[0] for m in list(bd.methods)]:
         # Combining mid- and endpoint method into one method
