@@ -9,9 +9,17 @@ import life_cycle_assessment as lc
 import lcia_results as lr
 import standards as s
 
-def color_range():
-    cmap = plt.get_cmap('Accent')
-    return [cmap(i) for i in np.linspace(0, 1, 9)]
+def color_range(color_map="Dark2"):
+    """
+    Generates a reversed list of colors from the 'Spectral' colormap.
+
+    Returns:
+        list: A list of 9 colors in reversed order from the 'Spectral' colormap.
+    """
+    cmap = plt.get_cmap(color_map)
+    colors = [cmap(i) for i in np.linspace(0, 1, 8)]
+    #color_rev = list(reversed(colors))
+    return colors
 
 def join_path(path1, path2):
     return os.path.join(path1, path2)
@@ -179,23 +187,22 @@ def process_categorizing(df_GWP, case, flow_legend, columns):
                 
     return df_stack_updated, totals_df
 
-def results_dataframe(initialization, file_name, file_name_unique_process, sheet_name):
+def results_dataframe(initialization, file_name, file_name_unique_process, sheet_name, redo=False):
     df, plot_x_axis_all, impact_categories, unique = {}, {}, {}, {}
     for key, item in initialization.items():
-        print(f"Perfoming LCA for {key}")
+        
         # print(file_name_unique_process[key])
-        df[key], plot_x_axis_all[key], impact_categories[key] = lr.quick_LCIA(item, file_name[key], file_name_unique_process[key], sheet_name[key])
-        print()
+        df[key], plot_x_axis_all[key], impact_categories[key] = lr.quick_LCIA(item, file_name[key], file_name_unique_process[key], sheet_name[key], redo=redo)
     
     return df, plot_x_axis_all, impact_categories, unique
 
-def data_set_up(path, lcia_method, ecoinevnt_paths, system_path):
+def data_set_up(path, lcia_method, ecoinevnt_paths, system_path, redo=False, reload=False):
     data = {
     'case1' : {},
     'case2' : {}
     }
-    flow_legend, file_name, sheet_name, save_dir, initialization, file_name_unique_process = lc.initilization(path, lcia_method, ecoinevnt_paths, system_path)
-    df, plot_x_axis_all, impact_categories, unique = results_dataframe(initialization, file_name, file_name_unique_process, sheet_name)
+    flow_legend, file_name, sheet_name, save_dir, initialization, file_name_unique_process = lc.initilization(path, lcia_method, ecoinevnt_paths, system_path, reload=reload)
+    df, plot_x_axis_all, impact_categories, unique = results_dataframe(initialization, file_name, file_name_unique_process, sheet_name, redo=redo)
 
     for key, item in initialization.items():
 
@@ -278,26 +285,38 @@ def plot_title_text(lca_type):
     if 'consq' in lca_type:
         return 'Consequential'
     elif 'cut' in lca_type:
-        return 'Allocation cut-off by Classification'
+        return 'Attributional'
     else:
         return ''
 
-def midpoint_graph(data, case, recipe, plot_x_axis, initialization, folder):
+
+def figure_size(width_to_height_ratio=0.9):
+    dpi = 1000
+    width = 7480/dpi
+    height = width * width_to_height_ratio
+
+    figsize=(width, height)
+
+    return figsize, dpi
+
+def midpoint_graph(data, case, plot_x_axis, initialization, folder):
     plot_text_size()
     colors = color_range()
     df1 = data[case][f'{case}_cut_off'][0]
     df2 = data[case][f'{case}_consq'][0]
 
+
     # Extract columns and indices for plotting
     columns_to_plot = df1.columns
     index_list = list(df1.index.values)
 
-    # Create the plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 9))
-    bar_width = 1 / (len(index_list) + 1)
+    figsize, dpi = figure_size()
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
+    bar_width = 1 / (len(index_list) + 0.8)
     index = np.arange(len(columns_to_plot))
 
     # Plot each group of bars
+
     for i, process in enumerate(df1.index):
         values = df1.loc[process, columns_to_plot].values
         color = colors[i % len(colors)]  # Ensure color cycling
@@ -309,27 +328,30 @@ def midpoint_graph(data, case, recipe, plot_x_axis, initialization, folder):
         ax2.bar(index + i * bar_width, values, bar_width, label=process, color=color)
 
     # Format impact category string
-
+    recipe = 'midpoint (H)'
     # Set title and labels
     ax1.set_title(f"{plot_title_text('cut')} - {recipe}")  
     ax1.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
-    ax1.set_xticklabels(plot_x_axis, rotation=90)  # Added rotation here
+    ax1.set_xticklabels(plot_x_axis, rotation=90)
     ax1.set_yticks(np.arange(-1, 1 + 0.001, step=0.2))
 
     ax2.set_title(f"{plot_title_text('consq')} - {recipe}")
     ax2.set_xticks(index + bar_width * (len(index_list) - 1) / 2)
-    ax2.set_xticklabels(plot_x_axis, rotation=90)  # Added rotation here
+    ax2.set_xticklabels(plot_x_axis, rotation=90)
     ax2.set_yticks(np.arange(-1, 1 + 0.001, step=0.2))
+
+    
+    # Add space between the two subplots
 
     xlim(case, ax1, ax2, columns_to_plot)
 
-    x_pos = 0.97
+    x_pos = 0.96
 
 
     fig.legend(
         legend_text(initialization[f'{case}_consq'][1]),
         loc='upper left',
-        bbox_to_anchor=(0.965, x_pos),
+        bbox_to_anchor=(0.97, x_pos),
         ncol= 1,  # Adjust the number of columns based on legend size
         fontsize=10,
         frameon=False
@@ -341,19 +363,17 @@ def midpoint_graph(data, case, recipe, plot_x_axis, initialization, folder):
         f'{recipe}_{case}.png'
     )
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, format='png', bbox_inches='tight')
+    
+    fig.set_size_inches(figsize)
+
+    plt.savefig(output_file, dpi=dpi, format='png', bbox_inches='tight')
     plt.show()
 
-def endpoint_graph(data, case, recipe, plot_x_axis_end, initialization, folder):
+def endpoint_graph(data, case, plot_x_axis_end, initialization, folder):
     plot_text_size()
     colors = color_range()
     recipe = 'endpoint (H)'
-    plt.rcParams.update({
-        'font.size': 12,      # General font size
-        'axes.titlesize': 14, # Title font size
-        'axes.labelsize': 12, # Axis labels font size
-        'legend.fontsize': 10 # Legend font size
-        }) 
+    plot_text_size()
 
     df1 = data[case][f'{case}_cut_off'][1]
     df2 = data[case][f'{case}_consq'][1]
@@ -363,7 +383,8 @@ def endpoint_graph(data, case, recipe, plot_x_axis_end, initialization, folder):
     index_list = list(df1.index.values)
 
     # Create the plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 9))
+    figsize, dpi = figure_size()
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
     bar_width = 1 / (len(index_list) + 1)
     index = np.arange(len(columns_to_plot))
 
@@ -392,13 +413,13 @@ def endpoint_graph(data, case, recipe, plot_x_axis_end, initialization, folder):
 
     xlim(case, ax1, ax2, columns_to_plot)
 
-    x_pos = 0.97
+    x_pos = 0.96
 
 
     fig.legend(
         legend_text(initialization[f'{case}_consq'][1]),
         loc='upper left',
-        bbox_to_anchor=(0.965, x_pos),
+        bbox_to_anchor=(0.97, x_pos),
         ncol= 1,  # Adjust the number of columns based on legend size
         fontsize=10,
         frameon=False
@@ -411,7 +432,8 @@ def endpoint_graph(data, case, recipe, plot_x_axis_end, initialization, folder):
         f'{recipe}_{case}.png'
     )
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, format='png', bbox_inches='tight')
+    fig.set_size_inches(figsize)
+    plt.savefig(output_file, dpi=dpi, format='png', bbox_inches='tight')
     plt.show()
 
 def gwp_figure_setup(data, case, path, initialization, flow_legend):
@@ -440,13 +462,13 @@ def y_min_max(case):
     if '1' in case:
         y_min1 = -0.6
         y_max1 = 1.8
-        y_min2 = -0.6
-        y_max2 = 1.8
+        y_min2 = -0.4
+        y_max2 = 1.4
 
     else:
-        y_min1 = -0.4
+        y_min1 = -0.2
         y_max1 = 1.6
-        y_min2 = -0.4
+        y_min2 = -0.2
         y_max2 = 1.6
 
     return y_min1, y_max1, y_min2, y_max2
@@ -459,12 +481,13 @@ def gwp_figure(data, case, path, initialization):
     
 
     # Create the plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 9))
+    figsize, dpi = figure_size()
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
     marker_color = 'k'
     # cut off
     df1s.plot(kind='bar', stacked=True, ax=ax1, color=colors, zorder=2, legend=False)
     ax1.axhline(y=0, color='k', linestyle='-', zorder=0, linewidth=0.5)
-    ax1.set_ylabel('Global Warming Potential [kg CO$_2$e/FU]',  fontsize=12)
+    ax1.set_ylabel('GWP [kg CO$_2$e/FU]',  fontsize=12)
 
     # Plotting 'Total' values as dots and including it in the legend
     for idx, row in totals_df1.iterrows():
@@ -473,7 +496,7 @@ def gwp_figure(data, case, path, initialization):
         ax1.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label='Net impact' if idx == 0 else "")
         # Add the data value
         ax1.text(
-            unit, total - 0.12, f"{total:.2f}", 
+            unit, total - 0.2, f"{total:.2f}", 
             ha='center', va='bottom', fontsize=10, 
             color=marker_color)
 
@@ -486,7 +509,7 @@ def gwp_figure(data, case, path, initialization):
     # CONSQ
     df2s.plot(kind='bar', stacked=True, ax=ax2, color=colors, zorder=2, legend=False)
     ax2.axhline(y=0, color='k', linestyle='-', zorder=0, linewidth=0.5)
-    ax2.set_ylabel('Global Warming Potential [kg CO$_2$e/FU]',  fontsize=12)
+    ax2.set_ylabel('GWP [kg CO$_2$e/FU]',  fontsize=12)
 
     # Plotting 'Total' values as dots and including it in the legend
     for idx, row in totals_df2.iterrows():
@@ -495,7 +518,7 @@ def gwp_figure(data, case, path, initialization):
         ax2.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label='Net impact' if idx == 0 else "")
         # Add the data value
         ax2.text(
-            unit, total - 0.15, f"{total:.2f}", 
+            unit, total - 0.2, f"{total:.2f}", 
             ha='center', va='bottom', fontsize=10, 
             color=marker_color)
 
@@ -509,7 +532,7 @@ def gwp_figure(data, case, path, initialization):
         labels=columns1,
         handles=handles,
         loc="upper center",  # Place legend at the bottom center
-        bbox_to_anchor=(1.13, 0.97),  # Adjust position to below the x-axis
+        bbox_to_anchor=(1.12, 0.96),  # Adjust position to below the x-axis
         ncol=1,  # Display legend entries in 3 columns
         fontsize=10.5,
         frameon=False  # Remove the legend box
@@ -524,8 +547,6 @@ def gwp_figure(data, case, path, initialization):
     ax1.set_xticklabels(legend_text(initialization[f'{case}_cut_off'][1]), rotation=0, fontsize=11)
 
 
-
-
     # Set title, y-ticks, y-limits, and x-tick labels for ax2
     ax2.set_title(plot_title_text('consq'), fontsize=14)
     ax2.set_yticks(np.arange(y_min2, y_max2 + 0.01, step=0.2))
@@ -535,7 +556,8 @@ def gwp_figure(data, case, path, initialization):
     plt.tight_layout()
 
     filename = join_path(folder, f'gwp_{case}.png')
-    plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
+    fig.set_size_inches(figsize)
+    plt.savefig(filename, dpi=dpi, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
     plt.show()
 
 def break_even_orginization(df_be, case):
@@ -663,15 +685,17 @@ def be1_figure(data, case, initialization, path):
     plot_text_size()
     colors = color_range()
     # Plot results
-    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    figsize, dpi = figure_size()
+    # fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
+    fig, axs = plt.subplots(2, 2, figsize=figsize)
 
     ax1 = axs[0, 0]
     ax2 = axs[0, 1]
     ax3 = axs[1, 0]
     ax4 = axs[1, 1]
 
-    color_idxs = [0, 1, 2, 4]
-    color_idxl = [3, 5, 6, 7]
+    color_idxs = [0, 1, 2, 3]
+    color_idxl = [4, 5, 6, 7]
     
     df1be, df2be, folder = break_even_setup(data, case, initialization, path)
 
@@ -735,7 +759,7 @@ def be1_figure(data, case, initialization, path):
         handles.append(plt.Line2D([0], [0], color=colors[color_idxl[idx]], linewidth=3, linestyle='dashed' if 'H' in key else 'solid'))
         labels.append(key)
 
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0), ncol=8, fontsize=10.5, frameon=False)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.03), ncol=8, fontsize=10.5, frameon=False)
 
     ax1.set_title(f"{plot_title_text('cut')} - Small")
     ax2.set_title(f"{plot_title_text('cut')} - Large")
@@ -747,15 +771,19 @@ def be1_figure(data, case, initialization, path):
     ax3.set_xlabel('Cycle(s)')
     ax4.set_xlabel('Cycle(s)')
 
-    ax1.set_ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
-    ax2.set_ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
-    ax3.set_ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
-    ax4.set_ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
+    ax1.set_ylabel('Accumulated GWP [kg CO$_2$e]')
+    ax2.set_ylabel('Accumulated GWP [kg CO$_2$e]')
+    ax3.set_ylabel('Accumulated GWP [kg CO$_2$e]')
+    ax4.set_ylabel('Accumulated GWP [kg CO$_2$e]')
 
     ax1.set_xlim(0, 513)
     ax2.set_xlim(0, 513)
     ax3.set_xlim(0, 513)
     ax4.set_xlim(0, 513)
+    ax1.set_xticks(range(0,501,100))
+    ax2.set_xticks(range(0,501,100))
+    ax3.set_xticks(range(0,501,100))
+    ax4.set_xticks(range(0,501,100))
     y1 = 350
     y2 = 800
     ax1.set_ylim(0, y1)
@@ -775,7 +803,8 @@ def be1_figure(data, case, initialization, path):
 
     # Save and display plot
     filename = join_path(folder, f'break_even_{case}.png')
-    plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
+    fig.set_size_inches(figsize)
+    plt.savefig(filename, dpi=dpi, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
     plt.show()
 
 def be_case2_setup(df_be):
@@ -800,9 +829,6 @@ def be_case2_setup(df_be):
     for key, usage in production.items():
         be_dct[key] = []
         for u in range(1, amount_of_uses + 1):
-            # if u == 1:
-            #     be_dct[key].append(usage)
-            # else:
             be_dct[key].append(multi_use.get(key, usage) * u + usage)
         
     return be_dct
@@ -823,7 +849,8 @@ def be2_figure(data, case, initialization, path):
     colors = color_range()
 
     # Plot results
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 10))
+    figsize, dpi = figure_size()
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
 
     for idx, (key, value) in enumerate(dfbe1.items()):
         try:
@@ -856,7 +883,7 @@ def be2_figure(data, case, initialization, path):
         handles,
         labels,
         loc="upper center",  # Place legend at the bottom center
-        bbox_to_anchor=(0.97, 0.89),  # Adjust position to below the x-axis
+        bbox_to_anchor=(0.97, 0.9),  # Adjust position to below the x-axis
         ncol=1,  # Display legend entries in 3 columns
         fontsize=10.5,
         frameon=False  # Remove the legend box
@@ -867,8 +894,8 @@ def be2_figure(data, case, initialization, path):
     ax1.set_xlabel('Cycle(s)\n')
     ax2.set_xlabel('Cycle(s)')
 
-    ax1.set_ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
-    ax2.set_ylabel('Accumulated Global Warming Pot. [kg CO$_2$e]')
+    ax1.set_ylabel('Accumulated GWP [kg CO$_2$e]')
+    ax2.set_ylabel('Accumulated GWP [kg CO$_2$e]')
 
     ax1.set_xlim(0, 250)
     ax2.set_xlim(0, 250)
@@ -881,11 +908,12 @@ def be2_figure(data, case, initialization, path):
 
 
     # Adjust layout to add a 0.5 cm gap between the figures
-    plt.subplots_adjust(hspace=0.6 / 2.54)  # 0.5 cm gap converted to inches
+    plt.subplots_adjust(hspace=1 / 2.54)  # 0.5 cm gap converted to inches
 
     # Save and display plot
     filename = join_path(folder, f'break_even_{case}.png')
-    plt.savefig(filename, dpi=300, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
+    fig.set_size_inches(figsize)
+    plt.savefig(filename, dpi=dpi, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
     plt.show()
 
 def be_figure(case, data, initialization, path):
@@ -894,7 +922,10 @@ def be_figure(case, data, initialization, path):
     else:
         be2_figure(data, case, initialization, path)
 
-def create_results_figures(case, path, ecoinevnt_paths, system_path):
+
+
+
+def create_results_figures(case, path, ecoinevnt_paths, system_path, redo=False, reload=False):
     _, initialization = lc.get_all_flows(path, 'recipe')
     folder = s.results_folder(join_path(path,'results'), case)
     impact_categories = lc.lcia_impact_method('recipe')
@@ -918,9 +949,11 @@ def create_results_figures(case, path, ecoinevnt_paths, system_path):
             string[0] = 'GWP'
         plot_x_axis.append(string[0])
     
-    data = data_set_up(path, 'recipe', ecoinevnt_paths, system_path)
+    data = data_set_up(path, 'recipe', ecoinevnt_paths, system_path, redo=redo, reload=reload)
 
-    midpoint_graph(data, case, 'recipe', plot_x_axis, initialization, folder)
-    endpoint_graph(data, case, 'recipe', plot_x_axis_end, initialization, folder)
+    midpoint_graph(data, case, plot_x_axis, initialization, folder)
+    endpoint_graph(data, case, plot_x_axis_end, initialization, folder)
     gwp_figure(data, case, path, initialization)
     be_figure(case, data, initialization, path)
+
+    return data

@@ -28,7 +28,7 @@ def get_all_flows(path, lcia_meth='recipe', bw_project="Single Use vs Multi Use"
     bd.projects.set_current(bw_project)
     
     # Define the database types
-    db_type = ['apos', 'consq', 'cut_off']
+    db_type = ['consq', 'cut_off']
 
     # Initialize dictionaries to store various information
     flows = {}
@@ -101,19 +101,19 @@ def get_all_flows(path, lcia_meth='recipe', bw_project="Single Use vs Multi Use"
     return lst, initialization
 
 # Function to initialize the database and get all flows
-def initilization(path, lcia_method, ecoinevnt_paths, system_path):
+def initilization(path, lcia_method, ecoinevnt_paths, system_path, bw_project="Single Use vs Multi Use", case_range=range(1, 3), reload=False):
     # Setup the database with the provided paths
-    ied.database_setup(ecoinevnt_paths, system_path)
+    ied.database_setup(ecoinevnt_paths, system_path, reload=reload)
 
     # Get all flows and initialization parameters
-    lst, initialization = get_all_flows(path, lcia_method)
+    lst, initialization = get_all_flows(path, lcia_method, bw_project, case_range)
     save_dir, file_name, flow_legend, file_name_unique_process, sheet_name = lst
 
     # Return the collected information
     return flow_legend, file_name, sheet_name, save_dir, initialization, file_name_unique_process
 
 # Function to obtain the LCIA category to calculate the LCIA results
-def lcia_impact_method(method):
+def lcia_impact_method(method='recipe'):
     # Checking if the LCIA method is ReCiPe, and ignores difference between lower and upper case 
     if 'recipe' in method.lower():
 
@@ -129,12 +129,12 @@ def lcia_impact_method(method):
         for meth in endpoint:
             all_methods.append(meth)
             
-        print('Recipe is selected')
+        # print('Recipe is selected')
 
     # Checking if EF is choses for the LCIA method
     elif 'ef' in method.lower():
         all_methods = [m for m in bw.methods if 'EF v3.1 EN15804' in str(m) and "climate change:" not in str(m)]
-        print('EF is selected')
+        # print('EF is selected')
 
     else:
         print('Select either EF or ReCiPe as the LCIA methos')
@@ -200,13 +200,13 @@ def LCA_initialization(database_name: str, flows: list, method: str) -> tuple:
             for m in idx.values():
                 FU[key].update({m[1]: m[0]})
     
-    print(f'Initialization is completed for {database_name}')
+    # print(f'Initialization is completed for {database_name}')
     return FU, impact_category
 
 # saving the LCIA results to excel
-def save_LCIA_results(df, file_name, sheet_name, impact_category):
-    if type(impact_category) == tuple:
-        impact_category = [impact_category]
+def save_LCIA_results(df, file_name, sheet_name):
+    # if type(impact_category) == tuple:
+    #     impact_category = [impact_category]
 
     # Convert each cell to a JSON string for all columns
     df_save = df.map(lambda x: json.dumps(x) if isinstance(x, list) else x)
@@ -215,7 +215,7 @@ def save_LCIA_results(df, file_name, sheet_name, impact_category):
     with pd.ExcelWriter(file_name) as writer:
         df_save.to_excel(writer, sheet_name=sheet_name, index=True, header=True)
 
-    print('DataFrame with nested lists written to Excel successfully.')
+    # print('DataFrame with nested lists written to Excel successfully.')
 
 
 # Function to import the LCIA results from excel

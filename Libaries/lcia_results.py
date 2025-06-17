@@ -30,7 +30,7 @@ def quick_LCIA_calculator(unique_process_index, func_unit, impact_categories, fi
             df_unique.iat[col, row] = val
 
     # Save results to file
-    save_LCIA_results(df_unique, file_name_unique, sheet_name, impact_categories)
+    save_LCIA_results(df_unique, file_name_unique, sheet_name)
 
     return df_unique
 
@@ -92,29 +92,20 @@ def redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_
             df_unique_copy.at[row.Index, col] = getattr(row, col)
 
     # Save updated results to file
-    save_LCIA_results(df_unique_copy, file_name_unique, sheet_name, impact_categories)
+    save_LCIA_results(df_unique_copy, file_name_unique, sheet_name)
     
     return df_unique_copy
 
-def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_unique, unique_process_index, initialization, FU, functional_unit, flows):
-    user_input = ''
-    
+def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_unique, unique_process_index, initialization, FU, functional_unit, flows, redo=False):
+
     # Check if file exists
     if os.path.isfile(file_name_unique):
         try:
             # Import LCIA results
             df_unique = import_LCIA_results(file_name_unique, impact_categories)
-            user_input = input(f"Do you want to redo the calculations for some process in {initialization[1]}?\n"
-                               "Options:\n"
-                               "  'y' - Yes, redo calculations for some processes\n"
-                               "  'n' - No, do not redo any calculations\n"
-                               "  'a' - Redo everything\n"
-                               "  'r' - Recalculate based only on the functional unit (FU)\n"
-                               "Please enter your choice: ")
-            
-            if 'y' in user_input.lower():
-                df_unique = redo_LCIA_unique_process(df_unique, initialization, file_name_unique, sheet_name)
-            elif 'a' in user_input.lower():
+
+            if redo:
+                
                 df_unique = quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name, case=initialization[1])
         except (ValueError, KeyError, TypeError) as e:
             print(e)
@@ -123,7 +114,7 @@ def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_
         print(f"{file_name_unique} do not exist, but will be created now")
         df_unique = quick_LCIA_calculator(unique_process_index, FU, impact_categories, file_name_unique, sheet_name, case=initialization[1])
 
-    if 'n' in user_input.lower():
+    if redo is False:
         df = import_LCIA_results(file_name, impact_categories)
     else:
         df = pd.DataFrame(0, index=flows, columns=impact_categories, dtype=object)
@@ -152,11 +143,11 @@ def lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_
                         except ValueError:
                             print(f'value error for {proc}')
         
-        save_LCIA_results(df, file_name, sheet_name, impact_categories)   
+        save_LCIA_results(df, file_name, sheet_name)   
 
     return df
 
-def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
+def quick_LCIA(initialization, file_name, file_name_unique, sheet_name, redo=False):
     """
     Perform a quick Life Cycle Impact Assessment (LCIA) calculation.
 
@@ -198,8 +189,7 @@ def quick_LCIA(initialization, file_name, file_name_unique, sheet_name):
     for i in range(len(plot_x_axis_all)):
         plot_x_axis_all[i] = impact_categories[i][2]
 
-    df = lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_unique, unique_process_index, initialization, FU, functional_unit, flows)
-
+    df = lcia_dataframe_handling(file_name, sheet_name, impact_categories, file_name_unique, unique_process_index, initialization, FU, functional_unit, flows, redo=redo)
     return df, plot_x_axis_all, impact_categories
 
 def df_index(key):

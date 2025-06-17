@@ -14,16 +14,14 @@ def results_folder(path, name, db=None):
     try:
         # Check if the directory already exists
         if os.path.exists(save_dir):
-            print(f'{temp} already exist')
+            pass
         else:
             # Create the directory if it doesn't exist
             os.makedirs(save_dir, exist_ok=True)
-            print(f'The folder {temp} is created')
     
     except (OSError, FileExistsError) as e:
         # Handle potential UnboundLocalError
         print('Error occurred')
-    print(save_dir)
     return save_dir
 
 def join_path(path1, path2):

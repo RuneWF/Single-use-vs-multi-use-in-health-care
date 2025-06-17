@@ -17,7 +17,7 @@ import results_figures as rfig
 def join_path(path1, path2):
     return os.path.join(path1, path2)
 
-def get_all_flows(path):
+def get_all_flows(path, case):
     # Set the current Brightway2 project
     bd.projects.set_current("Single Use vs Multi Use")
     
@@ -32,54 +32,53 @@ def get_all_flows(path):
     db_type_dct = {}
 
     # Loop through case numbers and database types
-    for nr in range(1, 3):
-        for tp in db_type:
-            # Construct the database name
-            database_name = f'case{nr}' + '_' + tp
-            database_name_lst.append(database_name)
-            db = bd.Database(database_name)
-            
-            # Initialize a list to store flow names
-            flow = []
-            
-            # Check if the database is case1
-            if 'case1' in str(db):
-                for act in db:
-                    temp = act['name']
-                    # Add specific flows based on conditions
-                    if ('H2' in temp or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow:
-                        flow.append(temp)
-                    elif 'alubox' in temp and '+' in temp and 'eol' not in temp.lower():
-                        flow.append(temp)
-                flow.sort()
-            # Check if the database is case2
-            elif 'case2' in str(db):
-                for act in db:
-                    temp = act['name']
-                    if temp == 'SUD' or temp == 'MUD':
-                        flow.append(temp)
-                flow.sort()
-                flow.reverse()
-            
-            # Store the flows in the dictionary
-            flows[database_name] = flow
-            
-            # Create the results folder and store the directory path
-            dir_temp = s.results_folder(join_path(path, 'results'), f"case{nr}")
-            save_dir[database_name] = dir_temp
-            
-            # Store the file name for the results
-            file_name[database_name] = join_path(dir_temp,rf'data_case{nr}_{tp}_recipe.xlsx')
-            
-            # Store the database type in the dictionary
-            db_type_dct[database_name] = tp
-    
+    for tp in db_type:
+        # Construct the database name
+        database_name = case + '_' + tp
+        database_name_lst.append(database_name)
+        db = bd.Database(database_name)
+        
+        # Initialize a list to store flow names
+        flow = []
+        
+        # Check if the database is case1
+        if case in str(db):
+            for act in db:
+                temp = act['name']
+                # Add specific flows based on conditions
+                if ('H2' in temp or 'H4' in temp) and ('SU' in temp or 'REC' in temp) and temp not in flow:
+                    flow.append(temp)
+                elif 'alubox' in temp and '+' in temp and 'eol' not in temp.lower():
+                    flow.append(temp)
+            flow.sort()
+        # Check if the database is case2
+        elif case in str(db):
+            for act in db:
+                temp = act['name']
+                if temp == 'SUD' or temp == 'MUD':
+                    flow.append(temp)
+            flow.sort()
+            flow.reverse()
+        
+        # Store the flows in the dictionary
+        flows[database_name] = flow
+        
+        # Create the results folder and store the directory path
+        dir_temp = s.results_folder(join_path(path, 'results'), case)
+        save_dir[database_name] = dir_temp
+        
+        # Store the file name for the results
+        file_name[database_name] = join_path(dir_temp,rf'data_{case}_{tp}_recipe.xlsx')
+        
+        # Store the database type in the dictionary
+        db_type_dct[database_name] = tp
+
     # Return the collected data
     return flows, database_name_lst, db_type_dct, save_dir, file_name
 
-def break_even_initialization(path, lcia_method):
+def break_even_initialization(path, lcia_method, case):
     # Reloading the self-made libraries to ensure they are up to date
-    flows, database_name, db_type, save_dir, file_name = get_all_flows(path)
+    flows, database_name, db_type, save_dir, file_name = get_all_flows(path, case)
     
     # Get the impact category based on the LCIA method
     impact_category = lc.lcia_impact_method(lcia_method)
@@ -187,10 +186,6 @@ def sensitivity_table_results(totals_df, idx_sens, col_to_df, df_sensitivity_v):
 
             if row[col] != 0 and 'total' not in idx:
                 val = row[col]
-                if 'lower' in col:
-                    sens = tot - val
-                else:
-                    sens = tot + val
                 df_sensitivity_p.at[idx, col] = (val - tot) / tot * 100
             elif 'total' in idx:
                 if 'lower' in col:
@@ -308,7 +303,7 @@ def calculate_sensitivity_values(variables, autoclave_gwp, case):
     Returns:
     pd.DataFrame: DataFrame with sensitivity percentage results.
     """
-    database_name, df_GWP, db_type, save_dir, impact_category, flows = variables
+    database_name, df_GWP, db_type = variables[:3]
 
     # Define flow legend based on the database name
     if 'case1' in database_name:
@@ -334,11 +329,11 @@ def calculate_sensitivity_values(variables, autoclave_gwp, case):
 
     # Find the minimum and maximum value of the sensitivity analysis
     if 'case1' in database_name:
-        df, val_dct, idx_sens, col_to_df = c1.case1_initilazation(df_be)
-        df_dct = c1.uncertainty_case1(df, val_dct, df_be, totals_df, idx_sens, col_to_df)
+        df, val_dct = c1.case1_initilazation(df_be)
+        df_dct = c1.uncertainty_case1(df, val_dct, df_be,)
         return results_dataframe(df, df_dct, df_be)
     elif 'case2' in database_name:
-        df, val_dct, idx_sens, col_to_df = c2.case2_initilazation(df_be, db_type, autoclave_gwp)
+        df, val_dct = c2.case2_initilazation(df_be, db_type, autoclave_gwp)
         df_dct = c2.uncertainty_case2(val_dct, df_be, df)
         return results_dataframe(df, df_dct, df_be)
 
@@ -356,10 +351,10 @@ def save_sensitivity_to_excel(variables, case, autoclave_gwp_dct):
     """
     identifier = variables[0]
     save_dir = variables[3]
-    df_sens = calculate_sensitivity_values(variables, autoclave_gwp_dct, case)
 
+    df_sens = calculate_sensitivity_values(variables, autoclave_gwp_dct, case)
+    # print(f"Autoclave  = {df_sens.iat[1,1]}")
     results_path = join_path(save_dir, f"sensitivity_{identifier}.xlsx")
-    
     if os.path.exists(results_path):
         try:
             # Try to load the existing workbook
@@ -367,8 +362,8 @@ def save_sensitivity_to_excel(variables, case, autoclave_gwp_dct):
             with pd.ExcelWriter(results_path, engine='openpyxl', mode='a') as writer:
                 writer.book = book
                 df_sens.to_excel(writer, sheet_name=identifier, index=True)
-        except Exception as e:
-            print(f"Error loading existing workbook: {e}")
+        except Exception:
+            # print(f"Error loading existing workbook: {e}")
             # If there's an error loading the workbook, create a new one
             with pd.ExcelWriter(results_path, engine='openpyxl') as writer:
                 df_sens.to_excel(writer, sheet_name=identifier, index=True)
@@ -377,7 +372,7 @@ def save_sensitivity_to_excel(variables, case, autoclave_gwp_dct):
         with pd.ExcelWriter(results_path, engine='openpyxl') as writer:
             df_sens.to_excel(writer, sheet_name=identifier, index=True)
     
-    print(f"Saved successfully to {results_path} in sheet {identifier}")
+    # print(f"Saved successfully to {results_path} in sheet {identifier}")
 
     return df_sens
 
@@ -393,12 +388,11 @@ def obtain_case1_autoclave_gwp(variables, path):
     dict: Dictionary with case identifiers as keys and their respective autoclave GWP impacts as values.
     """
     autoclave_gwp_dct = {}
-    for key, item in variables.items():
+    for item in variables.values():
         try:
-            if '1' in key:
-                # Calculate the autoclave GWP impact for case1 and store it in the dictionary
-                autoclave_gwp_dct[f'case2_{item[2]}'] = autoclave_gwp_impact_case1(item, path)
-                autoclave_gwp_dct[item[0]] = ''
+            # Calculate the autoclave GWP impact for case1 and store it in the dictionary
+            autoclave_gwp_dct[f'case2_{item[2]}'] = autoclave_gwp_impact_case1(item, path)
+            autoclave_gwp_dct[f'case1_{item[2]}'] = ''
         except KeyError as e:
             print(e)
             
@@ -417,21 +411,21 @@ def iterative_save_sensitivity_results_to_excel(path, case):
         - df_dct: Dictionary with case identifiers as keys and their respective sensitivity DataFrames as values.
         - df_dct_be: Dictionary with case identifiers as keys and their respective break-even DataFrames as values.
     """
-    variables = break_even_initialization(path, 'recipe')
+    variables = break_even_initialization(path, 'recipe', case)
     # Obtain the autoclave GWP impacts for case1
+    
     autoclave_gwp_dct = obtain_case1_autoclave_gwp(variables, path)
     df_dct = {}
 
     # Iterate over each case in the variables dictionary
     for key, item in variables.items():
-        if '1' in key:
+        if case in key and '1' in key:
             # Save sensitivity results for case1
-            df_sens = save_sensitivity_to_excel(item, case, autoclave_gwp_dct[key])
-        elif '2' in key:
+            df_dct[key] = save_sensitivity_to_excel(item, case, autoclave_gwp_dct[key])
+        elif case in key and '2' in key:
             # Save sensitivity results for case2
-            df_sens = save_sensitivity_to_excel(item, case, autoclave_gwp_dct[key])
+            df_dct[key] = save_sensitivity_to_excel(item, case, autoclave_gwp_dct[key])
         
-        # Store the sensitivity DataFrame in the dictionary
-        df_dct[key] = df_sens
+
 
     return df_dct

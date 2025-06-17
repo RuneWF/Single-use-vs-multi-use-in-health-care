@@ -167,4 +167,4 @@ def case2_initilazation(df_be, database_type, autoclave_gwp):
     # Create a dataframe with zeros, indexed by sensitivity indices and columns by lower and upper bounds
     df = pd.DataFrame(0, index=idx_sens, columns=col_to_df, dtype=object)
 
-    return df, val_dct, idx_sens, col_to_df
+    return df, val_dct
