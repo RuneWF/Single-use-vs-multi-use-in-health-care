@@ -165,14 +165,13 @@ def process_categorizing(df_GWP, case, flow_legend, columns):
     df = pd.DataFrame(list(key_dic.items()), columns=['Category', 'Value'])
 
     # Separate 'Total' values from the rest
-    totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Net impact']
+    # totals_df = df[df['Category'].apply(lambda x: x[1]) == 'Net impact']
     df = df[df['Category'].apply(lambda x: x[1]) != 'Net impact']
 
     # Pivot the DataFrame to have a stacked format
     df_stacked = df.pivot_table(index=[df['Category'].apply(lambda x: x[0])], columns=[df['Category'].apply(lambda x: x[1])], values='Value', aggfunc='sum').fillna(0)
 
     # Create a DataFrame to store results
-
     df_stack_updated = pd.DataFrame(0, index=flow_legend, columns=columns[:-1], dtype=object)  # dtype=object to handle lists
     for col in df_stack_updated.columns:
         for inx, row in df_stack_updated.iterrows():
@@ -183,9 +182,12 @@ def process_categorizing(df_GWP, case, flow_legend, columns):
             except KeyError:
                 # print(f"keyerror at {inx}")
                 pass
-
+    
+    totals_dct = {}
+    for idx in df_stack_updated.index:
+        totals_dct[idx] = df_stack_updated.loc[idx].sum()
                 
-    return df_stack_updated, totals_df
+    return df_stack_updated, totals_dct
 
 def results_dataframe(initialization, file_name, file_name_unique_process, sheet_name, redo=False):
     df, plot_x_axis_all, impact_categories, unique = {}, {}, {}, {}
@@ -448,15 +450,15 @@ def gwp_figure_setup(data, case, path, initialization, flow_legend):
     _, database_name1, _, _, tp = initialization[f'{case}_cut_off']
     columns1 = lc.unique_elements_list(database_name1)
     
-    df1s, totals_df1 = process_categorizing(df1gwp, case, flow_legend, columns1)
+    df1s, totals_dct1 = process_categorizing(df1gwp, case, flow_legend, columns1)
 
     _, database_name2, _, _, tp = initialization[f'{case}_consq']
     columns2 = lc.unique_elements_list(database_name2)
-    df2s, totals_df2 = process_categorizing(df2gwp, case, flow_legend, columns2)
+    df2s, totals_dct2 = process_categorizing(df2gwp, case, flow_legend, columns2)
 
     
 
-    return folder, df1s, totals_df1, df2s, totals_df2, columns1
+    return folder, df1s, totals_dct1, df2s, totals_dct2, columns1
 
 def y_min_max(case):
     if '1' in case:
@@ -475,7 +477,7 @@ def y_min_max(case):
 
 def gwp_figure(data, case, path, initialization):
     flow_legend = legend_text(case)
-    folder, df1s, totals_df1, df2s, totals_df2, columns1 = gwp_figure_setup(data, case, path, initialization, flow_legend)
+    folder, df1s, totals_dct1, df2s, totals_dct2, columns1 = gwp_figure_setup(data, case, path, initialization, flow_legend)
     plot_text_size()
     colors = color_range()
     
@@ -490,10 +492,10 @@ def gwp_figure(data, case, path, initialization):
     ax1.set_ylabel('GWP [kg CO$_2$e/FU]',  fontsize=12)
 
     # Plotting 'Total' values as dots and including it in the legend
-    for idx, row in totals_df1.iterrows():
-        unit = row['Category'][0]
-        total = row['Value']
-        ax1.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label='Net impact' if idx == 0 else "")
+    for c, val in totals_dct1.items():
+        unit = c
+        total = val
+        ax1.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label="")
         # Add the data value
         ax1.text(
             unit, total - 0.2, f"{total:.2f}", 
@@ -512,10 +514,10 @@ def gwp_figure(data, case, path, initialization):
     ax2.set_ylabel('GWP [kg CO$_2$e/FU]',  fontsize=12)
 
     # Plotting 'Total' values as dots and including it in the legend
-    for idx, row in totals_df2.iterrows():
-        unit = row['Category'][0]
-        total = row['Value']
-        ax2.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label='Net impact' if idx == 0 else "")
+    for c, val in totals_dct2.items():
+        unit = c
+        total = val
+        ax2.plot(unit, total, 'D', color=marker_color, markersize=4, mec='k', label="")
         # Add the data value
         ax2.text(
             unit, total - 0.2, f"{total:.2f}", 
@@ -559,6 +561,8 @@ def gwp_figure(data, case, path, initialization):
     fig.set_size_inches(figsize)
     plt.savefig(filename, dpi=dpi, format='png', bbox_inches='tight')  # Save with 300 dpi resolution
     plt.show()
+
+    return df1s, totals_dct1, df2s, totals_dct2
 
 def break_even_orginization(df_be, case):
     df_be_copy = dc(df_be)
@@ -953,7 +957,7 @@ def create_results_figures(case, path, ecoinevnt_paths, system_path, redo=False,
 
     midpoint_graph(data, case, plot_x_axis, initialization, folder)
     endpoint_graph(data, case, plot_x_axis_end, initialization, folder)
-    gwp_figure(data, case, path, initialization)
+    df1s, totals_df1, df2s, totals_df2 = gwp_figure(data, case, path, initialization)
     be_figure(case, data, initialization, path)
 
-    return data
+    return data, df1s, totals_df1, df2s, totals_df2
